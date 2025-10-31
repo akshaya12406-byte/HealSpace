@@ -14,8 +14,8 @@ import {z, Message} from 'genkit';
 const HealBuddyWellnessGuidanceInputSchema = z.object({
   message: z.string().describe('The user message to the chatbot.'),
   chatHistory: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    content: z.string(),
+    role: z.enum(['user', 'model', 'system', 'tool']),
+    content: z.array(z.any()),
   })).optional().describe('The chat history between the user and the chatbot.'),
 });
 export type HealBuddyWellnessGuidanceInput = z.infer<typeof HealBuddyWellnessGuidanceInputSchema>;
@@ -62,14 +62,17 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
   async ({ message, chatHistory = [] }) => {
-    const history = chatHistory.map(
-      (msg) => new Message({ role: msg.role, content: [{ text: msg.content }] })
-    );
+
+    const history = chatHistory.map(message => ({
+      role: message.role as 'user' | 'model',
+      content: [{ text: message.content as string }]
+    }));
+
 
     const result = await prompt({
         message,
-        chatHistory
-    }, { history });
+        chatHistory: history,
+    });
 
     const toolRequest = result.toolRequest('suggestTherapist');
     

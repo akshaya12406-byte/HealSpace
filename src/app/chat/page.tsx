@@ -9,14 +9,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { healBuddyWellnessGuidance } from '@/ai/flows/ai-chatbot-guidance';
+import { healBuddyWellnessGuidance, HealBuddyWellnessGuidanceInput } from '@/ai/flows/ai-chatbot-guidance';
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
+import { Message } from 'genkit/ai';
 
-interface Message {
+interface DisplayMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
 
 const conversationStarters = [
   "I'm feeling really anxious today.",
@@ -57,7 +59,7 @@ const renderMessageContent = (content: string) => {
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       role: 'assistant',
       content: "Namaste! I'm HealBuddy, your AI friend. How are you feeling today? 😊"
@@ -85,20 +87,21 @@ export default function ChatPage() {
   const handleSendMessage = async (messageContent: string) => {
     if (!messageContent.trim()) return;
 
-    const userMessage: Message = { role: 'user', content: messageContent };
+    const userMessage: DisplayMessage = { role: 'user', content: messageContent };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
-      const chatHistory = messages.map(m => ({ role: m.role, content: m.content }));
-      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory });
+      const flowHistory = messages.map(m => new Message({role: m.role, content: [{text: m.content}]}));
+
+      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory: flowHistory });
       
-      const assistantMessage: Message = { role: 'assistant', content: response.response };
+      const assistantMessage: DisplayMessage = { role: 'assistant', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
       console.error("Chat API error:", error);
-      const errorMessage: Message = { role: 'assistant', content: "I'm having a little trouble connecting right now. Please try again in a moment. 😊" };
+      const errorMessage: DisplayMessage = { role: 'assistant', content: "I'm having a little trouble connecting right now. Please try again in a moment. 😊" };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
