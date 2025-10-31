@@ -18,7 +18,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z, type MessageData } from 'genkit';
+import { z } from 'zod';
+import { type MessageData } from 'genkit';
+
 
 // =================================================================================
 // 1. Input/Output Schemas
@@ -107,15 +109,13 @@ const getGeneralChatResponse = ai.defineFlow(
   },
   async ({ message, chatHistory = [] }) => {
 
-    // **DEFINITIVE FIX IS HERE:**
-    // The client now sends the full, correct history. We just use it directly.
-    // The previous mapping logic was the source of the "undefined" bug.
     const fullHistory: MessageData[] = chatHistory;
     
     const result = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       system: `You are HealBuddy, an AI-powered chatbot designed to provide empathetic wellness guidance. You communicate in Hinglish (a mix of Hindi and English) and use principles of Cognitive Behavioral Therapy (CBT) to help users explore their feelings in a safe and supportive environment. Your responses should be concise, supportive, and culturally sensitive. Always prioritize user safety and well-being. Do not give any medical or diagnostic advice. Focus on guiding users to explore and understand their feelings, not on providing definitive solutions. Be short and conversational. Add a smiley emoji at the end of every message. Keep responses under 50 words.`,
       history: fullHistory,
+      prompt: message,
     });
 
     return result.text;

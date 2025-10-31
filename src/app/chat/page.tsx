@@ -98,44 +98,62 @@ export default function ChatPage() {
     setMessages(newMessages);
     setIsLoading(true);
   
-    // DEFINITIVE FIX: Build the history from `newMessages` which includes the current user message,
-    // not the stale `messages` state.
-    const flowHistory: MessageData[] = newMessages.map((m) => ({
-      role: m.role,
-      content: [{ text: m.content }],
-    }));
-  
     try {
-      // The `message` property is now the last user message, and `chatHistory` contains everything.
+      // Build chat history - exclude the current message from history
+      // The current message goes in the 'message' field
+      const flowHistory: MessageData[] = messages.map((m) => ({
+        role: m.role,
+        content: [{ text: m.content }],
+      }));
+  
       const flowInput: HealBuddyWellnessGuidanceInput = {
         message: messageContent,
-        chatHistory: flowHistory,
+        chatHistory: flowHistory, // Previous messages only
       };
   
       const response = await healBuddyWellnessGuidance(flowInput);
+  
+      // Add null/undefined checks for response
+      if (!response) {
+        throw new Error('No response received from backend');
+      }
   
       if (response.error) {
         console.error('Backend flow error:', response.error);
         toast({
           variant: 'destructive',
-          title: 'Debugging: Flow Error',
-          description: <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4"><code className="text-white">{response.error}</code></pre>,
+          title: 'Flow Error',
+          description: typeof response.error === 'string' 
+            ? response.error 
+            : 'An error occurred. Please try again.',
         });
         // Restore previous state on error
         setMessages(messages);
+      } else if (response.response) {
+        // Check if response.response exists
+        const modelMessage: DisplayMessage = { 
+          role: 'model', 
+          content: response.response 
+        };
+        setMessages([...newMessages, modelMessage]);
       } else {
-        const modelMessage: DisplayMessage = { role: 'model', content: response.response };
-        setMessages((prev) => [...prev, modelMessage]);
+        // Handle case where response exists but response.response doesn't
+        throw new Error('Invalid response structure');
       }
   
     } catch (error) {
-      // This catch is for *network* or unexpected client-side errors.
       console.error('Client-side error calling the flow:', error);
       const errorMessage: DisplayMessage = {
         role: 'model',
-        content: "Oops! I couldn't reach the server. Please check your connection. 😊",
+        content: "Oops! I couldn't process your message. Please try again. 😊",
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages([...messages, errorMessage]); // Don't include the failed user message
+      
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
