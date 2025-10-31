@@ -60,14 +60,10 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
   async ({ message, chatHistory = [] }) => {
-    const history: MessageData[] = chatHistory.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }));
-
+    
     const result = await prompt({
-        message,
-        chatHistory: history,
+        history: chatHistory,
+        message: message,
     });
 
     const toolRequest = result.toolRequest('suggestTherapist');

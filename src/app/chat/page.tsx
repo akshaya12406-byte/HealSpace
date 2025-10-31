@@ -9,13 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { healBuddyWellnessGuidance, HealBuddyWellnessGuidanceInput } from '@/ai/flows/ai-chatbot-guidance';
+import { healBuddyWellnessGuidance } from '@/ai/flows/ai-chatbot-guidance';
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
 import { type MessageData } from 'genkit';
 
 interface DisplayMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'model';
   content: string;
 }
 
@@ -61,7 +61,7 @@ export default function ChatPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
-      role: 'assistant',
+      role: 'model',
       content: "Namaste! I'm HealBuddy, your AI friend. How are you feeling today? 😊"
     }
   ]);
@@ -88,23 +88,28 @@ export default function ChatPage() {
     if (!messageContent.trim()) return;
 
     const userMessage: DisplayMessage = { role: 'user', content: messageContent };
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages: DisplayMessage[] = [...messages, userMessage];
+    setMessages(newMessages);
     setIsLoading(true);
 
     try {
-      const flowHistory: MessageData[] = messages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
+      const flowHistory: MessageData[] = newMessages.map(m => ({
+        role: m.role,
         content: [{text: m.content}]
       }));
-
-      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory: flowHistory });
       
-      const assistantMessage: DisplayMessage = { role: 'assistant', content: response.response };
+      // Remove the latest user message from the history sent to the flow
+      const historyForFlow = flowHistory.slice(0, -1);
+
+
+      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory: historyForFlow });
+      
+      const assistantMessage: DisplayMessage = { role: 'model', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
       console.error("Chat API error:", error);
-      const errorMessage: DisplayMessage = { role: 'assistant', content: "I'm having a little trouble connecting right now. Please try again in a moment. 😊" };
+      const errorMessage: DisplayMessage = { role: 'model', content: "I'm having a little trouble connecting right now. Please try again in a moment. 😊" };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -145,7 +150,7 @@ export default function ChatPage() {
                 key={index}
                 className={cn('flex items-start gap-3', message.role === 'user' ? 'justify-end' : 'justify-start')}
               >
-                {message.role === 'assistant' && (
+                {message.role === 'model' && (
                   <Avatar className="h-8 w-8 border">
                     <AvatarFallback><Bot /></AvatarFallback>
                   </Avatar>
