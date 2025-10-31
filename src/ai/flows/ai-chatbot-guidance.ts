@@ -66,7 +66,7 @@ const routeUserIntent = ai.defineFlow(
   },
   async (message) => {
     const result = await ai.generate({
-      model: 'googleai/gemini-2.5-flash', // Keeping your specified model
+      model: 'googleai/gemini-2.5-flash',
       prompt: `Analyze the user's message and determine the correct intent.
 
 User message: "${message}"`,
@@ -107,24 +107,18 @@ const getGeneralChatResponse = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ message, chatHistory = [] }) => {
-    
-    // **FIX IS HERE:**
-    // Add a filter for 'm' itself to prevent 'cannot read properties of undefined'
-    const mappedHistory: MessageData[] = chatHistory
-      .filter(m => m && m.content && m.content.length > 0) // Filter out any nullish messages or messages with empty content
-      .map(m => ({
-        role: m.role,
-        content: m.content,
-      }));
 
-    // Add the current user message to the end of the history.
+    // **DEFINITIVE FIX IS HERE:**
+    // The client already sends the history in the correct MessageData[] format.
+    // We no longer need to re-map it. We just use it directly.
+    // The current user message is appended for the final AI call.
     const fullHistory: MessageData[] = [
-      ...mappedHistory,
+      ...chatHistory,
       { role: 'user', content: [{ text: message }] },
     ];
     
     const result = await ai.generate({
-      model: 'googleai/gemini-2.5-flash', // Keeping your specified model
+      model: 'googleai/gemini-2.5-flash',
       system: `You are HealBuddy, an AI-powered chatbot designed to provide empathetic wellness guidance. You communicate in Hinglish (a mix of Hindi and English) and use principles of Cognitive Behavioral Therapy (CBT) to help users explore their feelings in a safe and supportive environment. Your responses should be concise, supportive, and culturally sensitive. Always prioritize user safety and well-being. Do not give any medical or diagnostic advice. Focus on guiding users to explore and understand their feelings, not on providing definitive solutions. Be short and conversational. Add a smiley emoji at the end of every message. Keep responses under 50 words.`,
       history: fullHistory,
     });
