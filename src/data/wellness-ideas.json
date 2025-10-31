@@ -1,0 +1,66 @@
+
+[
+  {
+    "id": 1,
+    "title": "Journal your thoughts",
+    "category": "Mindfulness",
+    "icon": "book-open",
+    "internalLink": "/journal"
+  },
+  {
+    "id": 2,
+    "title": "Explore feelings with HealBuddy",
+    "category": "Reflection",
+    "icon": "bot",
+    "internalLink": "/chat"
+  },
+  {
+    "id": 3,
+    "title": "Practice gratitude",
+    "category": "Mindfulness",
+    "icon": "heart"
+  },
+  {
+    "id": 4,
+    "title": "Go for a 15-minute walk",
+    "category": "Movement",
+    "icon": "footprints"
+  },
+  {
+    "id": 5,
+    "title": "Connect with a friend",
+    "category": "Connection",
+    "icon": "users"
+  },
+  {
+    "id": 6,
+    "title": "Mindful stretching",
+    "category": "Movement",
+    "icon": "stretch-horizontal"
+  },
+  {
+    "id": 7,
+    "title": "Tidy up your space",
+    "category": "Environment",
+    "icon": "sparkles"
+  },
+  {
+    "id": 8,
+    "title": "Listen to a calming playlist",
+    "category": "Relaxation",
+    "icon": "music"
+  },
+  {
+    "id": 9,
+    "title": "Read a chapter of a book",
+    "category": "Relaxation",
+    "icon": "book"
+  },
+  {
+    "id": 10,
+    "title": "Explore peer support circles",
+    "category": "Connection",
+    "icon": "circle-dot",
+    "internalLink": "/circles"
+  }
+]
