@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { FormEvent } from 'react';
@@ -16,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
 import { type MessageData } from 'genkit/ai';
+import { useToast } from '@/hooks/use-toast';
 
 interface DisplayMessage {
   role: 'user' | 'model';
@@ -62,6 +64,7 @@ const renderMessageContent = (content: string) => {
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       role: 'model',
@@ -94,8 +97,6 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Prepare history for the backend.
-    // The backend expects all previous messages.
     const flowHistory: MessageData[] = messages.map((m) => ({
       role: m.role,
       content: [{ text: m.content }],
@@ -109,12 +110,23 @@ export default function ChatPage() {
 
       const response = await healBuddyWellnessGuidance(flowInput);
 
+      // --- START: Updated Logic to handle new response format ---
+      if (response.error) {
+        console.error('Backend flow error:', response.error);
+        toast({
+          variant: 'destructive',
+          title: 'Debugging: Flow Error',
+          description: <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4"><code className="text-white">{response.error}</code></pre>,
+        });
+      }
+
       const modelMessage: DisplayMessage = { role: 'model', content: response.response };
       setMessages((prev) => [...prev, modelMessage]);
+      // --- END: Updated Logic ---
+
     } catch (error) {
-      console.error('Failed to call the server action:', error);
-      // This catch is now only for *network* errors (e.g., server is down),
-      // as the backend flow handles its own API errors.
+      // This catch is for *network* or unexpected client-side errors.
+      console.error('Client-side error calling the flow:', error);
       const errorMessage: DisplayMessage = {
         role: 'model',
         content: "Oops! I couldn't reach the server. Please check your connection. 😊",
