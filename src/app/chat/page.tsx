@@ -9,10 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { healBuddyWellnessGuidance, type HealBuddyWellnessGuidanceInput } from '@/ai/flows/ai-chatbot-guidance';
+import {
+  healBuddyWellnessGuidance,
+  type HealBuddyWellnessGuidanceInput,
+} from '@/ai/flows/ai-chatbot-guidance';
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
-import { type MessageData } from 'genkit';
+import { type MessageData } from 'genkit/ai';
 
 interface DisplayMessage {
   role: 'user' | 'model';
@@ -21,9 +24,9 @@ interface DisplayMessage {
 
 const conversationStarters = [
   "I'm feeling really anxious today.",
-  "How can I deal with stress at work?",
-  "I had a fight with a friend.",
-  "I just want to talk to someone."
+  'How can I deal with stress at work?',
+  'I had a fight with a friend.',
+  'I just want to talk to someone.',
 ];
 
 // Function to parse the message content and render links
@@ -32,7 +35,8 @@ const renderMessageContent = (content: string) => {
   const parts = content.split(linkRegex);
 
   return parts.map((part, index) => {
-    if (index % 3 === 1) { // This is the link text
+    if (index % 3 === 1) {
+      // This is the link text
       const linkUrl = parts[index + 1];
       return (
         <Link key={index} href={linkUrl} className="text-primary underline hover:text-primary/80">
@@ -40,20 +44,20 @@ const renderMessageContent = (content: string) => {
         </Link>
       );
     }
-    if (index % 3 === 2) { // This is the link URL, so we skip it
-        return null;
+    if (index % 3 === 2) {
+      // This is the link URL, so we skip it
+      return null;
     }
     // This is a regular text part
     // We split by newlines to render paragraphs
     return part.split('\n').map((line, lineIndex) => (
-        <Fragment key={`${index}-${lineIndex}`}>
-            {line}
-            {lineIndex < part.split('\n').length - 1 && <br />}
-        </Fragment>
+      <Fragment key={`${index}-${lineIndex}`}>
+        {line}
+        {lineIndex < part.split('\n').length - 1 && <br />}
+      </Fragment>
     ));
   });
 };
-
 
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
@@ -61,8 +65,8 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       role: 'model',
-      content: "Namaste! I'm HealBuddy, your AI friend. How are you feeling today? 😊"
-    }
+      content: "Namaste! I'm HealBuddy, your AI friend. How are you feeling today? 😊",
+    },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -76,10 +80,10 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-        const viewport = scrollAreaRef.current.querySelector('div');
-        if (viewport) {
-            viewport.scrollTop = viewport.scrollHeight;
-        }
+      const viewport = scrollAreaRef.current.querySelector('div');
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -93,9 +97,9 @@ export default function ChatPage() {
 
     try {
       // Convert the display messages to the format expected by the Genkit flow.
-      const flowHistory: MessageData[] = newMessages.slice(0, -1).map(m => ({
+      const flowHistory: MessageData[] = newMessages.slice(0, -1).map((m) => ({
         role: m.role,
-        content: [{ text: m.content }]
+        content: [{ text: m.content }],
       }));
 
       const flowInput: HealBuddyWellnessGuidanceInput = {
@@ -104,14 +108,16 @@ export default function ChatPage() {
       };
 
       const response = await healBuddyWellnessGuidance(flowInput);
-      
-      const assistantMessage: DisplayMessage = { role: 'model', content: response.response };
-      setMessages(prev => [...prev, assistantMessage]);
 
+      const assistantMessage: DisplayMessage = { role: 'model', content: response.response };
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error("Failed to call the server action:", error);
-      const errorMessage: DisplayMessage = { role: 'model', content: "Oops! I couldn't reach the server. Please check your connection. 😊" };
-      setMessages(prev => [...prev, errorMessage]);
+      console.error('Failed to call the server action:', error);
+      const errorMessage: DisplayMessage = {
+        role: 'model',
+        content: "Oops! I couldn't reach the server. Please check your connection. 😊",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -139,21 +145,28 @@ export default function ChatPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 h-[calc(100vh-8rem)] flex flex-col">
-        <div className="space-y-2 mb-8">
-            <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Chat with HealBuddy</h1>
-            <p className="text-muted-foreground">Your empathetic AI companion for wellness guidance.</p>
-        </div>
+      <div className="space-y-2 mb-8">
+        <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
+          Chat with HealBuddy
+        </h1>
+        <p className="text-muted-foreground">Your empathetic AI companion for wellness guidance.</p>
+      </div>
       <div className="flex-1 overflow-hidden flex flex-col bg-card border rounded-lg shadow-sm">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
           <div className="space-y-6">
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={cn('flex items-start gap-3', message.role === 'user' ? 'justify-end' : 'justify-start')}
+                className={cn(
+                  'flex items-start gap-3',
+                  message.role === 'user' ? 'justify-end' : 'justify-start'
+                )}
               >
                 {message.role === 'model' && (
                   <Avatar className="h-8 w-8 border">
-                    <AvatarFallback><Bot /></AvatarFallback>
+                    <AvatarFallback>
+                      <Bot />
+                    </AvatarFallback>
                   </Avatar>
                 )}
                 <div
@@ -166,18 +179,22 @@ export default function ChatPage() {
                 >
                   <p className="text-sm whitespace-pre-wrap">{renderMessageContent(message.content)}</p>
                 </div>
-                 {message.role === 'user' && (
+                {message.role === 'user' && (
                   <Avatar className="h-8 w-8 border">
-                     <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} />
-                    <AvatarFallback>{user.displayName?.charAt(0) ?? user.email?.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} />
+                    <AvatarFallback>
+                      {user.displayName?.charAt(0) ?? user.email?.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                 )}
               </div>
             ))}
-             {isLoading && (
+            {isLoading && (
               <div className="flex items-start gap-3 justify-start">
                 <Avatar className="h-8 w-8 border">
-                   <AvatarFallback><Bot /></AvatarFallback>
+                  <AvatarFallback>
+                    <Bot />
+                  </AvatarFallback>
                 </Avatar>
                 <div className="bg-secondary text-secondary-foreground rounded-xl rounded-bl-none px-4 py-3">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -186,18 +203,25 @@ export default function ChatPage() {
             )}
           </div>
         </ScrollArea>
-        
+
         {messages.length <= 1 && (
-            <div className="p-4 border-t">
-                <p className="text-sm text-muted-foreground mb-2 text-center">Not sure where to start? Try one of these:</p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                    {conversationStarters.map(starter => (
-                        <Button key={starter} variant="outline" size="sm" onClick={() => handleStarterClick(starter)}>
-                            {starter}
-                        </Button>
-                    ))}
-                </div>
+          <div className="p-4 border-t">
+            <p className="text-sm text-muted-foreground mb-2 text-center">
+              Not sure where to start? Try one of these:
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {conversationStarters.map((starter) => (
+                <Button
+                  key={starter}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleStarterClick(starter)}
+                >
+                  {starter}
+                </Button>
+              ))}
             </div>
+          </div>
         )}
 
         <div className="p-4 border-t bg-background">

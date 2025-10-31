@@ -8,15 +8,21 @@
  * - HealBuddyWellnessGuidanceOutput - The return type for the healBuddyWellnessGuidance function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z, type MessageData} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import { type MessageData } from 'genkit/ai';
 
 const HealBuddyWellnessGuidanceInputSchema = z.object({
   message: z.string().describe('The user message to the chatbot.'),
-  chatHistory: z.array(z.object({
-    role: z.enum(['user', 'model']),
-    content: z.array(z.object({ text: z.string() })),
-  })).optional().describe('The chat history between the user and the chatbot.'),
+  chatHistory: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'model']),
+        content: z.array(z.object({ text: z.string() })),
+      })
+    )
+    .optional()
+    .describe('The chat history between the user and the chatbot.'),
 });
 export type HealBuddyWellnessGuidanceInput = z.infer<typeof HealBuddyWellnessGuidanceInputSchema>;
 
@@ -25,22 +31,24 @@ const HealBuddyWellnessGuidanceOutputSchema = z.object({
 });
 export type HealBuddyWellnessGuidanceOutput = z.infer<typeof HealBuddyWellnessGuidanceOutputSchema>;
 
-export async function healBuddyWellnessGuidance(input: HealBuddyWellnessGuidanceInput): Promise<HealBuddyWellnessGuidanceOutput> {
+export async function healBuddyWellnessGuidance(
+  input: HealBuddyWellnessGuidanceInput
+): Promise<HealBuddyWellnessGuidanceOutput> {
   return healBuddyWellnessGuidanceFlow(input);
 }
 
 const suggestTherapistTool = ai.defineTool(
-    {
-      name: 'suggestTherapist',
-      description: 'Suggests that the user should consider talking to a therapist.',
-      inputSchema: z.object({}),
-      outputSchema: z.object({
-        recommend: z.boolean().describe('Whether to recommend a therapist.'),
-      }),
-    },
-    async () => {
-      return { recommend: true };
-    }
+  {
+    name: 'suggestTherapist',
+    description: 'Suggests that the user should consider talking to a therapist.',
+    inputSchema: z.object({}),
+    outputSchema: z.object({
+      recommend: z.boolean().describe('Whether to recommend a therapist.'),
+    }),
+  },
+  async () => {
+    return { recommend: true };
+  }
 );
 
 const prompt = ai.definePrompt({
@@ -60,43 +68,39 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
   async ({ message, chatHistory = [] }) => {
-    
-    // The history must include the current user message.
-    const fullHistory: MessageData[] = [
-      ...chatHistory,
-      { role: 'user', content: [{ text: message }] },
-    ];
-    
+    // The history must include the current user message as the last item.
+    const fullHistory: MessageData[] = [...chatHistory, { role: 'user', content: [{ text: message }] }];
+
     try {
       const result = await prompt({
         history: fullHistory,
       });
 
       const toolRequest = result.toolRequest('suggestTherapist');
-      
+
       if (toolRequest) {
-          const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
+        const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
 
 [Browse our therapist marketplace](/therapists) to find the right fit for you.`;
-          return {
-              response: handoffResponse,
-          };
+        return {
+          response: handoffResponse,
+        };
       }
 
       const outputText = result.output;
       if (!outputText) {
-          throw new Error('AI model did not return output.');
+        throw new Error('AI model did not return output.');
       }
 
       return {
         response: outputText,
       };
     } catch (e: any) {
-        console.error('Error during AI chatbot interaction:', e);
-        // Fallback mechanism: provide a pre-scripted response in case of API failure
-        return {
-          response: "I'm having a little trouble connecting right now. Please try again in a moment. 😊",
-        };
+      console.error('Error during AI chatbot interaction:', e);
+      // Fallback mechanism: provide a pre-scripted response in case of API failure
+      return {
+        response: "I'm having a little trouble connecting right now. Please try again in a moment. 😊",
+      };
     }
   }
 );
