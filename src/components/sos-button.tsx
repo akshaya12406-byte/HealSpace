@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -25,26 +26,26 @@ export default function SosButton() {
         <AlertDialogHeader>
           <AlertDialogTitle>You Are Not Alone</AlertDialogTitle>
           <AlertDialogDescription>
-            If you are in crisis or immediate danger, please reach out for help. Here are some resources that can provide immediate support.
+            If you are in crisis or immediate danger, please reach out for help. Here are some resources in India that can provide immediate support.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-4 my-4">
             <div>
-                <h3 className="font-semibold">National Suicide Prevention Lifeline</h3>
-                <p className="text-sm text-muted-foreground">Call or text 988 anytime in the US and Canada.</p>
+                <h3 className="font-semibold">Vandrevala Foundation</h3>
+                <p className="text-sm text-muted-foreground">A 24/7 helpline for mental wellness. Call 9999666555.</p>
             </div>
             <div>
-                <h3 className="font-semibold">Crisis Text Line</h3>
-                <p className="text-sm text-muted-foreground">Text "HOME" to 741741 from anywhere in the US, anytime, about any type of crisis.</p>
+                <h3 className="font-semibold">iCALL</h3>
+                <p className="text-sm text-muted-foreground">Provides counselling by telephone, email and chat. Call 022-25521111 (Mon-Sat, 10 AM - 8 PM).</p>
             </div>
              <div>
-                <h3 className="font-semibold">Emergency Services</h3>
-                <p className="text-sm text-muted-foreground">For immediate danger, please call 911 (or your local emergency number).</p>
+                <h3 className="font-semibold">AASRA</h3>
+                <p className="text-sm text-muted-foreground">A 24/7 helpline for emotional distress and suicide prevention. Call 9820466726.</p>
             </div>
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>Close</AlertDialogCancel>
-          <AlertDialogAction onClick={() => window.open('tel:988', '_self')}>Call 988</AlertDialogAction>
+          <AlertDialogAction onClick={() => window.open('tel:9999666555', '_self')}>Call Helpline</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
