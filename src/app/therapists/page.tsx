@@ -10,10 +10,12 @@ import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { therapists, allSpecialties, allLanguages } from '@/lib/therapists-data';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TherapistsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [languageFilter, setLanguageFilter] = useState('all');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
 
@@ -30,6 +32,13 @@ export default function TherapistsPage() {
       return languageMatch && specialtyMatch;
     });
   }, [languageFilter, specialtyFilter]);
+
+  const handleBookSession = (therapistName: string) => {
+    toast({
+      title: 'Booking Request Sent!',
+      description: `Your request for a session with ${therapistName} has been received. You will get a confirmation email shortly.`,
+    });
+  };
   
   if (authLoading || !user) {
     return (
@@ -95,7 +104,7 @@ export default function TherapistsPage() {
                     {therapist.languages.map(l => <Badge key={l} variant="outline">{l}</Badge>)}
                   </div>
                 </div>
-                <Button className="w-full mt-2">Request Introduction</Button>
+                <Button className="w-full mt-2" onClick={() => handleBookSession(therapist.name)}>Book a Session</Button>
               </div>
             </CardContent>
           </Card>
