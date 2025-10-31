@@ -67,10 +67,10 @@ export default function JournalPage() {
       if (result.sentimentScore < -0.5) {
         toast({
           title: 'A Heavy Day',
-          description: "It looks like today was tough. Would you like to explore these feelings with Mitr?",
+          description: "It looks like today was tough. Would you like to explore these feelings with HealBuddy?",
           action: (
             <Button size="sm" onClick={() => router.push('/chat')}>
-              Chat with Mitr
+              Chat with HealBuddy
             </Button>
           ),
           duration: 10000,

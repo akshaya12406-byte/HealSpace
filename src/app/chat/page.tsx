@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { mitrWellnessGuidance } from '@/ai/flows/ai-chatbot-guidance';
+import { healBuddyWellnessGuidance } from '@/ai/flows/ai-chatbot-guidance';
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
 
@@ -30,7 +30,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Namaste! I'm Mitr, your AI friend. How are you feeling today? 😊"
+      content: "Namaste! I'm HealBuddy, your AI friend. How are you feeling today? 😊"
     }
   ]);
   const [input, setInput] = useState('');
@@ -63,7 +63,7 @@ export default function ChatPage() {
 
     try {
       const chatHistory = messages.map(m => ({ role: m.role, content: m.content }));
-      const response = await mitrWellnessGuidance({ message: messageContent, chatHistory });
+      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory });
       
       const assistantMessage: Message = { role: 'assistant', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);
@@ -100,7 +100,7 @@ export default function ChatPage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 h-[calc(100vh-8rem)] flex flex-col">
         <div className="space-y-2 mb-8">
-            <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Chat with Mitr</h1>
+            <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Chat with HealBuddy</h1>
             <p className="text-muted-foreground">Your empathetic AI companion for wellness guidance.</p>
         </div>
       <div className="flex-1 overflow-hidden flex flex-col bg-card border rounded-lg shadow-sm">
@@ -165,7 +165,7 @@ export default function ChatPage() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message to Mitr..."
+              placeholder="Type your message to HealBuddy..."
               className="flex-1"
               disabled={isLoading}
             />

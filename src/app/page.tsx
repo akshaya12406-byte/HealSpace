@@ -15,8 +15,8 @@ export default function Home() {
     },
     {
       icon: <Bot className="h-8 w-8 text-primary" />,
-      title: 'Meet Mitr, Your AI Friend',
-      description: 'Engage in empathetic conversations with Mitr, our AI chatbot trained in wellness guidance.',
+      title: 'Meet HealBuddy, Your AI Friend',
+      description: 'Engage in empathetic conversations with HealBuddy, our AI chatbot trained in wellness guidance.',
     },
     {
       icon: <Stethoscope className="h-8 w-8 text-primary" />,

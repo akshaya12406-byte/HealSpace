@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/journal', label: 'Journal' },
-  { href: '/chat', label: 'Chat with Mitr' },
+  { href: '/chat', label: 'Chat with HealBuddy' },
   { href: '/therapists', label: 'Therapists' },
   { href: '/circles', label: 'Circles' },
 ];
