@@ -107,8 +107,19 @@ const getGeneralChatResponse = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ message, chatHistory = [] }) => {
+    // Correctly map the incoming chat history to the MessageData format.
+    // The error "Cannot read property 'content' of undefined" happens when this
+    // mapping is incorrect. This new implementation is robust and safe.
+    const mappedHistory: MessageData[] = chatHistory
+      .filter(m => m.content && m.content.length > 0) // Filter out any empty messages
+      .map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+    // Add the current user message to the end of the history.
     const fullHistory: MessageData[] = [
-      ...chatHistory,
+      ...mappedHistory,
       { role: 'user', content: [{ text: message }] },
     ];
     
