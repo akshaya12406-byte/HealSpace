@@ -86,8 +86,8 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
           response: handoffResponse,
         };
       }
-
-      const outputText = result.output;
+      
+      const outputText = result.text;
       if (!outputText) {
         throw new Error('AI model did not return output.');
       }
