@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, Loader2 } from 'lucide-react';
 import SosButton from '@/components/sos-button';
+import { useToast } from '@/hooks/use-toast';
 
 const supportCircles = [
   {
@@ -34,12 +36,20 @@ const supportCircles = [
 export default function CirclesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
     }
   }, [user, authLoading, router]);
+
+  const handleJoinCircle = (circleTitle: string) => {
+    toast({
+      title: 'Request to Join Sent',
+      description: `Your request to join the "${circleTitle}" circle is pending approval. You'll be notified soon.`,
+    });
+  };
 
   if (authLoading || !user) {
     return (
@@ -77,7 +87,7 @@ export default function CirclesPage() {
                     </div>
                     <span className="text-green-500 font-bold">Active</span>
                 </div>
-              <Button className="w-full" disabled>Join Circle (UI Mock)</Button>
+              <Button className="w-full" onClick={() => handleJoinCircle(circle.title)}>Request to Join</Button>
             </CardContent>
           </Card>
         ))}
