@@ -97,8 +97,8 @@ export default function ChatPage() {
     // Prepare history for the backend.
     // The backend expects all previous messages.
     const flowHistory: MessageData[] = messages.map((m) => ({
-        role: m.role,
-        content: [{ text: m.content }],
+      role: m.role,
+      content: [{ text: m.content }],
     }));
 
     try {

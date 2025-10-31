@@ -57,7 +57,6 @@ If the user expresses a clear desire to talk to a person or a professional, or i
 
 Keep responses under 50 words.`;
 
-
 const healBuddyWellnessGuidanceFlow = ai.defineFlow(
   {
     name: 'healBuddyWellnessGuidanceFlow',
@@ -65,11 +64,10 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
   async ({ message, chatHistory = [] }) => {
-    
     // Construct the full history, ensuring the new user message is the last item.
     const fullHistory: MessageData[] = [
-        ...chatHistory,
-        { role: 'user', content: [{ text: message }] },
+      ...chatHistory,
+      { role: 'user', content: [{ text: message }] },
     ];
 
     try {
