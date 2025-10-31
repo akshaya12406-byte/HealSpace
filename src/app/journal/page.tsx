@@ -58,9 +58,7 @@ export default function JournalPage() {
     async function loadModel() {
       tf.setBackend('webgl');
       try {
-        const loadedModel = await use.load({
-            modelUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/universal-sentence-encoder-lite/model.json',
-        });
+        const loadedModel = await use.load();
         modelRef.current = loadedModel;
         setIsLoading(false);
       } catch (err) {
