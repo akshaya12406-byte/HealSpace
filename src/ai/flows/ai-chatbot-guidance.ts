@@ -86,7 +86,7 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     }
 
     return {
-      response: result.output.response,
+      response: result.output as string,
     };
   }
 );
