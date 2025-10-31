@@ -1,7 +1,8 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,6 +25,35 @@ const conversationStarters = [
   "I just want to talk to someone."
 ];
 
+// Function to parse the message content and render links
+const renderMessageContent = (content: string) => {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts = content.split(linkRegex);
+
+  return parts.map((part, index) => {
+    if (index % 3 === 1) { // This is the link text
+      const linkUrl = parts[index + 1];
+      return (
+        <Link key={index} href={linkUrl} className="text-primary underline hover:text-primary/80">
+          {part}
+        </Link>
+      );
+    }
+    if (index % 3 === 2) { // This is the link URL, so we skip it
+        return null;
+    }
+    // This is a regular text part
+    // We split by newlines to render paragraphs
+    return part.split('\n').map((line, lineIndex) => (
+        <Fragment key={`${index}-${lineIndex}`}>
+            {line}
+            {lineIndex < part.split('\n').length - 1 && <br />}
+        </Fragment>
+    ));
+  });
+};
+
+
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -45,8 +75,6 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-        // This is a bit of a hack to scroll to the bottom.
-        // The viewport is a child of the ref, so we access it directly.
         const viewport = scrollAreaRef.current.querySelector('div');
         if (viewport) {
             viewport.scrollTop = viewport.scrollHeight;
@@ -124,7 +152,7 @@ export default function ChatPage() {
                       : 'bg-secondary text-secondary-foreground rounded-bl-none'
                   )}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{renderMessageContent(message.content)}</p>
                 </div>
                  {message.role === 'user' && (
                   <Avatar className="h-8 w-8 border">
