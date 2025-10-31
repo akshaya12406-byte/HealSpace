@@ -6,8 +6,6 @@
  *   - Journal entries: `/users/{userId}/journal_entries/{journalEntryId}`.
  *   - Chat sessions: `/users/{userId}/chat_sessions/{sessionId}`.
  *   - Chat messages: `/users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}`.
- *   - Daily plans: `/users/{userId}/daily_plans/{planId}`.
- *   - Todos: `/users/{userId}/daily_plans/{planId}/todos/{todoId}`.
  *   - Therapist profiles are stored in `/therapist_profiles/{therapistId}` and are publicly readable.
  *
  * Key Security Decisions:
@@ -98,18 +96,6 @@ service cloud.firestore {
     }
 
     /**
-     * @description Controls access to a user's daily wellness plan tasks.
-     * @path /users/{userId}/daily_plans/{planId}/todos/{todoId}
-     * @allow (create, get, list, update, delete) - Allows a user to manage their own to-do items.
-     * @deny (create, get, list, update, delete) - Prevents other users from accessing them.
-     * @principle Enforces document ownership; users can only manage their own tasks.
-     */
-    match /users/{userId}/daily_plans/{planId}/todos/{todoId} {
-        allow read, write: if isOwner(userId);
-    }
-
-
-    /**
      * @description Controls access to therapist profiles.
      * @path /therapist_profiles/{therapistId}
      * @allow (get, list) - All users, including unauthenticated users, can read therapist profiles.
@@ -135,4 +121,3 @@ service cloud.firestore {
     return isOwner(userId) && resource != null;
   }
 }
-    

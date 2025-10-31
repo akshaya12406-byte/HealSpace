@@ -1,97 +1,36 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { wellnessIdeas, WellnessIdea } from '@/data/wellness-ideas';
-import TodoItem, { type Todo } from '@/components/plan/todo-item';
+import TodoItem from '@/components/plan/todo-item';
 import { useToast } from '@/hooks/use-toast';
 
-const getTodayDateString = () => {
-  return new Date().toISOString().split('T')[0];
-};
-
 export default function PlanPage() {
-  const { user, isUserLoading } = useAuth();
-  const firestore = useFirestore();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  
-  const today = getTodayDateString();
-
-  const todosCollectionRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'daily_plans', today, 'todos');
-  }, [firestore, user, today]);
-
-  const { data: todos, isLoading: todosLoading } = useCollection<Todo>(todosCollectionRef);
+  const [myTimeline, setMyTimeline] = useState<WellnessIdea[]>([]);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!authLoading && !user) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, authLoading, router]);
 
-  const handleAddTodo = async (idea: WellnessIdea) => {
-    if (!todosCollectionRef) return;
-    
-    const newTodo: Omit<Todo, 'id'> = {
-        ...idea,
-        completed: false,
-        createdAt: new Date().toISOString(),
-    };
-
-    try {
-        await addDoc(todosCollectionRef, newTodo);
-        toast({
-            title: "Activity Added",
-            description: `"${idea.title}" has been added to your timeline.`
-        })
-    } catch(error) {
-        console.error("Error adding todo:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not add the activity to your plan."
-        })
-    }
-  };
-  
-  const handleToggleTodo = async (todo: Todo) => {
-      if (!user) return;
-      const todoRef = doc(firestore, 'users', user.uid, 'daily_plans', today, 'todos', todo.id);
-      try {
-        await updateDoc(todoRef, { completed: !todo.completed });
-      } catch (error) {
-        console.error("Error updating todo:", error)
-      }
+  const handleAddTodo = (idea: WellnessIdea) => {
+    setMyTimeline((prev) => [...prev, idea]);
+    toast({
+        title: "Activity Added",
+        description: `"${idea.title}" has been added to your timeline.`
+    })
   };
 
-  const handleDeleteTodo = async (todoId: string) => {
-      if (!user) return;
-      const todoRef = doc(firestore, 'users', user.uid, 'daily_plans', today, 'todos', todoId);
-      try {
-        await deleteDoc(todoRef);
-        toast({
-            title: "Activity Removed",
-            description: "The activity has been removed from your plan."
-        })
-      } catch (error) {
-        console.error("Error deleting todo:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not remove the activity."
-        })
-      }
-  };
-
-
-  if (isUserLoading || !user) {
+  if (authLoading || !user) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -119,20 +58,14 @@ export default function PlanPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {todosLoading && <div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}
-                {!todosLoading && todos && todos.length > 0 ? (
-                  todos
-                    .sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1))
-                    .map((todo) => (
+                {myTimeline.length > 0 ? (
+                  myTimeline.map((item, index) => (
                       <TodoItem 
-                        key={todo.id} 
-                        item={todo} 
-                        onToggle={() => handleToggleTodo(todo)}
-                        onDelete={() => handleDeleteTodo(todo.id)}
+                        key={`${item.id}-${index}`} 
+                        item={item} 
                       />
                   ))
-                ) : null}
-                {!todosLoading && (!todos || todos.length === 0) && (
+                ) : (
                   <p className="text-muted-foreground text-center py-8">
                     Your timeline is empty. Add an idea from the library to get started!
                   </p>
@@ -179,5 +112,3 @@ export default function PlanPage() {
     </div>
   );
 }
-
-    
