@@ -177,6 +177,71 @@
         "specialty",
         "languages"
       ]
+    },
+    "DailyPlan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DailyPlan",
+      "type": "object",
+      "description": "Represents a user's wellness plan for a specific day.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DailyPlan (e.g., '2024-07-31')."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "The date of the plan."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "date"
+      ]
+    },
+    "TodoItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TodoItem",
+      "type": "object",
+      "description": "Represents a single to-do item within a daily plan.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TodoItem."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the to-do item."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the wellness activity."
+        },
+        "icon": {
+          "type": "string",
+          "description": "Lucide icon name for the item."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Indicates whether the to-do item is completed."
+        },
+        "internalLink": {
+          "type": "string",
+          "description": "An optional internal link for the to-do item."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "category",
+        "icon",
+        "completed"
+      ]
     }
   },
   "auth": {
@@ -282,8 +347,34 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/daily_plans/{planId}/todos/{todoId}",
+        "definition": {
+          "entityName": "TodoItem",
+          "schema": {
+            "$ref": "#/backend/entities/TodoItem"
+          },
+          "description": "Stores to-do items for a user's daily plan. Path-based ownership ensures only the user can access their own to-do items.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "planId",
+              "description": "The unique identifier for the daily plan (e.g., '2024-07-31')."
+            },
+            {
+              "name": "todoId",
+              "description": "The unique identifier for the to-do item."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. User data is stored under `/users/{userId}`, providing clear ownership and simplifying security rules. Journal entries, chat sessions, and chat messages are nested under the user's document to maintain a clear hierarchy and ownership. The `TherapistProfiles` collection is separate as the authorization requirements for these profiles are different; they are globally accessible.\n\n**Authorization Independence (Denormalization):**  The structure avoids `get()` calls in security rules by ensuring all necessary authorization information is available within the document itself or through path-based ownership. For example, journal entries are stored under `/users/{userId}/journal_entries/{journalEntryId}`, making it straightforward to verify ownership via the path. The chatbot messages follow the same principle, where the messages are stored in paths under `/users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}`.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations by segregating data based on access control needs.  User-specific data is stored under the `/users/{userId}` collection, allowing for easy listing of a user's own data without the need for filtering based on document content. Therapist profiles are stored in a separate collection and are designed to be globally readable. This segregation simplifies security rules and optimizes query performance."
   }
 }
+
+    
