@@ -16,7 +16,7 @@ import {
 } from '@/ai/flows/ai-chatbot-guidance';
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
-import { type MessageData } from 'genkit/ai';
+import { type MessageData } from 'genkit';
 import { useToast } from '@/hooks/use-toast';
 
 interface DisplayMessage {

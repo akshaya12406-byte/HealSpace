@@ -18,8 +18,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { type MessageData } from 'genkit/ai';
+import { z, type MessageData } from 'genkit';
 
 // =================================================================================
 // 1. Input/Output Schemas
