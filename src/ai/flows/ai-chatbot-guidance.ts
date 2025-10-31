@@ -12,9 +12,9 @@
  * 2. Open your browser to http://localhost:4000/traces
  * 3. Every time you send a message in the chat, a new trace will appear.
  * 4. Click on a trace to see the entire execution path, including the input to the
- *    intent router, the determined intent, and the final call to the specialized flow.
- *    You can inspect the exact prompts, model outputs, and any API errors from Google.
- *    This is the fastest way to diagnose why a certain response was generated or if an API call is failing.
+ * intent router, the determined intent, and the final call to the specialized flow.
+ * You can inspect the exact prompts, model outputs, and any API errors from Google.
+ * This is the fastest way to diagnose why a certain response was generated or if an API call is failing.
  */
 
 import { ai } from '@/ai/genkit';
@@ -66,7 +66,7 @@ const routeUserIntent = ai.defineFlow(
   },
   async (message) => {
     const result = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-2.5-flash', // Keeping your specified model
       prompt: `Analyze the user's message and determine the correct intent.
 
 User message: "${message}"`,
@@ -107,11 +107,11 @@ const getGeneralChatResponse = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ message, chatHistory = [] }) => {
-    // Correctly map the incoming chat history to the MessageData format.
-    // The error "Cannot read property 'content' of undefined" happens when this
-    // mapping is incorrect. This new implementation is robust and safe.
+    
+    // **FIX IS HERE:**
+    // Add a filter for 'm' itself to prevent 'cannot read properties of undefined'
     const mappedHistory: MessageData[] = chatHistory
-      .filter(m => m.content && m.content.length > 0) // Filter out any empty messages
+      .filter(m => m && m.content && m.content.length > 0) // Filter out any nullish messages or messages with empty content
       .map(m => ({
         role: m.role,
         content: m.content,
@@ -124,7 +124,7 @@ const getGeneralChatResponse = ai.defineFlow(
     ];
     
     const result = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-2.5-flash', // Keeping your specified model
       system: `You are HealBuddy, an AI-powered chatbot designed to provide empathetic wellness guidance. You communicate in Hinglish (a mix of Hindi and English) and use principles of Cognitive Behavioral Therapy (CBT) to help users explore their feelings in a safe and supportive environment. Your responses should be concise, supportive, and culturally sensitive. Always prioritize user safety and well-being. Do not give any medical or diagnostic advice. Focus on guiding users to explore and understand their feelings, not on providing definitive solutions. Be short and conversational. Add a smiley emoji at the end of every message. Keep responses under 50 words.`,
       history: fullHistory,
     });
