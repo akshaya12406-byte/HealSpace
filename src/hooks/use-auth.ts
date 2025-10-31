@@ -1,12 +1,9 @@
 'use client';
 
-import { useContext } from 'react';
-import { AuthContext } from '@/contexts/auth-context';
+import { useUser } from '@/firebase';
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const { user, isUserLoading } = useUser();
+  // Match the old API for now
+  return { user, loading: isUserLoading };
 };

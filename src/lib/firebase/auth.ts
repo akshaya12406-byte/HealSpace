@@ -9,9 +9,11 @@ import {
   type UserCredential,
   type User,
 } from 'firebase/auth';
-import { app } from './config';
+import { firebaseConfig } from './config';
 import { createUserProfile, updateUserProfileStatus } from './firestore';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
