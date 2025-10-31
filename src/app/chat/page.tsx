@@ -109,8 +109,8 @@ export default function ChatPage() {
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error("Failed to call the chat API:", error);
-      const errorMessage: DisplayMessage = { role: 'model', content: "Oops! Could not reach the server. Please check your connection. 😊" };
+      console.error("Failed to call the server action:", error);
+      const errorMessage: DisplayMessage = { role: 'model', content: "Oops! I couldn't reach the server. Please check your connection. 😊" };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
