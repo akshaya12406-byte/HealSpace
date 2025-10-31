@@ -51,15 +51,12 @@ const suggestTherapistTool = ai.defineTool(
   }
 );
 
-const prompt = ai.definePrompt({
-  name: 'healBuddyWellnessGuidancePrompt',
-  tools: [suggestTherapistTool],
-  system: `You are HealBuddy, an AI-powered chatbot designed to provide empathetic wellness guidance. You communicate in Hinglish (a mix of Hindi and English) and use principles of Cognitive Behavioral Therapy (CBT) to help users explore their feelings in a safe and supportive environment. Your responses should be concise, supportive, and culturally sensitive. Always prioritize user safety and well-being. If the user expresses thoughts of self-harm or suicide, immediately direct them to seek professional help and provide resources like the Suicide Prevention Lifeline. Do not give any medical or diagnostic advice. Focus on guiding users to explore and understand their feelings, not on providing definitive solutions. Be short and conversational. Add a smiley emoji at the end of every message.
+const systemPrompt = `You are HealBuddy, an AI-powered chatbot designed to provide empathetic wellness guidance. You communicate in Hinglish (a mix of Hindi and English) and use principles of Cognitive Behavioral Therapy (CBT) to help users explore their feelings in a safe and supportive environment. Your responses should be concise, supportive, and culturally sensitive. Always prioritize user safety and well-being. If the user expresses thoughts of self-harm or suicide, immediately direct them to seek professional help and provide resources like the Suicide Prevention Lifeline. Do not give any medical or diagnostic advice. Focus on guiding users to explore and understand their feelings, not on providing definitive solutions. Be short and conversational. Add a smiley emoji at the end of every message.
 
 If the user expresses a clear desire to talk to a person or a professional, or if their issues seem complex and beyond the scope of a chatbot, use the suggestTherapist tool.
 
-Keep responses under 50 words.`,
-});
+Keep responses under 50 words.`;
+
 
 const healBuddyWellnessGuidanceFlow = ai.defineFlow(
   {
@@ -68,12 +65,19 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
   async ({ message, chatHistory = [] }) => {
-    // The history must include the current user message as the last item.
-    const fullHistory: MessageData[] = [...chatHistory, { role: 'user', content: [{ text: message }] }];
+    
+    // Construct the full history, ensuring the new user message is the last item.
+    const fullHistory: MessageData[] = [
+        ...chatHistory,
+        { role: 'user', content: [{ text: message }] },
+    ];
 
     try {
-      const result = await prompt({
+      const result = await ai.generate({
+        model: 'googleai/gemini-1.5-flash',
+        system: systemPrompt,
         history: fullHistory,
+        tools: [suggestTherapistTool],
       });
 
       const toolRequest = result.toolRequest('suggestTherapist');
@@ -89,15 +93,19 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
       
       const outputText = result.text;
       if (!outputText) {
-        throw new Error('AI model did not return output.');
+        // This case handles if the model returns a response with no text (e.g. only tool call)
+        // but the tool call wasn't the one we expected.
+        return {
+          response: "I'm not sure how to respond to that. Could you try rephrasing? 😊",
+        };
       }
 
       return {
         response: outputText,
       };
     } catch (e: any) {
-      console.error('Error during AI chatbot interaction:', e);
-      // Fallback mechanism: provide a pre-scripted response in case of API failure
+      console.error('CRITICAL: Error during AI generate call:', e);
+      // Fallback mechanism: provide a pre-scripted response in case of any API failure
       return {
         response: "I'm having a little trouble connecting right now. Please try again in a moment. 😊",
       };

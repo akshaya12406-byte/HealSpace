@@ -91,17 +91,17 @@ export default function ChatPage() {
     if (!messageContent.trim()) return;
 
     const userMessage: DisplayMessage = { role: 'user', content: messageContent };
-    const newMessages: DisplayMessage[] = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    try {
-      // Convert the display messages to the format expected by the Genkit flow.
-      const flowHistory: MessageData[] = newMessages.slice(0, -1).map((m) => ({
+    // Prepare history for the backend.
+    // The backend expects all previous messages.
+    const flowHistory: MessageData[] = messages.map((m) => ({
         role: m.role,
         content: [{ text: m.content }],
-      }));
+    }));
 
+    try {
       const flowInput: HealBuddyWellnessGuidanceInput = {
         message: messageContent,
         chatHistory: flowHistory,
@@ -109,10 +109,12 @@ export default function ChatPage() {
 
       const response = await healBuddyWellnessGuidance(flowInput);
 
-      const assistantMessage: DisplayMessage = { role: 'model', content: response.response };
-      setMessages((prev) => [...prev, assistantMessage]);
+      const modelMessage: DisplayMessage = { role: 'model', content: response.response };
+      setMessages((prev) => [...prev, modelMessage]);
     } catch (error) {
       console.error('Failed to call the server action:', error);
+      // This catch is now only for *network* errors (e.g., server is down),
+      // as the backend flow handles its own API errors.
       const errorMessage: DisplayMessage = {
         role: 'model',
         content: "Oops! I couldn't reach the server. Please check your connection. 😊",
@@ -130,7 +132,7 @@ export default function ChatPage() {
   };
 
   const handleStarterClick = (starter: string) => {
-    setInput(starter);
+    setInput(starter); // Set input for visual feedback, then send.
     handleSendMessage(starter);
     setInput('');
   };
