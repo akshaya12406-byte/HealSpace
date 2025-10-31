@@ -92,25 +92,28 @@ export default function ChatPage() {
 
   const handleSendMessage = async (messageContent: string) => {
     if (!messageContent.trim()) return;
-
+  
     const userMessage: DisplayMessage = { role: 'user', content: messageContent };
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setIsLoading(true);
-
-    const flowHistory: MessageData[] = messages.map((m) => ({
+  
+    // DEFINITIVE FIX: Build the history from `newMessages` which includes the current user message,
+    // not the stale `messages` state.
+    const flowHistory: MessageData[] = newMessages.map((m) => ({
       role: m.role,
       content: [{ text: m.content }],
     }));
-
+  
     try {
+      // The `message` property is now the last user message, and `chatHistory` contains everything.
       const flowInput: HealBuddyWellnessGuidanceInput = {
         message: messageContent,
         chatHistory: flowHistory,
       };
-
+  
       const response = await healBuddyWellnessGuidance(flowInput);
-
-      // --- START: Updated Logic to handle new response format ---
+  
       if (response.error) {
         console.error('Backend flow error:', response.error);
         toast({
@@ -118,12 +121,13 @@ export default function ChatPage() {
           title: 'Debugging: Flow Error',
           description: <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4"><code className="text-white">{response.error}</code></pre>,
         });
+        // Restore previous state on error
+        setMessages(messages);
+      } else {
+        const modelMessage: DisplayMessage = { role: 'model', content: response.response };
+        setMessages((prev) => [...prev, modelMessage]);
       }
-
-      const modelMessage: DisplayMessage = { role: 'model', content: response.response };
-      setMessages((prev) => [...prev, modelMessage]);
-      // --- END: Updated Logic ---
-
+  
     } catch (error) {
       // This catch is for *network* or unexpected client-side errors.
       console.error('Client-side error calling the flow:', error);
@@ -256,3 +260,5 @@ export default function ChatPage() {
     </div>
   );
 }
+
+    

@@ -109,13 +109,9 @@ const getGeneralChatResponse = ai.defineFlow(
   async ({ message, chatHistory = [] }) => {
 
     // **DEFINITIVE FIX IS HERE:**
-    // The client already sends the history in the correct MessageData[] format.
-    // We no longer need to re-map it. We just use it directly.
-    // The current user message is appended for the final AI call.
-    const fullHistory: MessageData[] = [
-      ...chatHistory,
-      { role: 'user', content: [{ text: message }] },
-    ];
+    // The client now sends the full, correct history. We just use it directly.
+    // The previous mapping logic was the source of the "undefined" bug.
+    const fullHistory: MessageData[] = chatHistory;
     
     const result = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
@@ -165,3 +161,5 @@ export async function healBuddyWellnessGuidance(
     };
   }
 }
+
+    
