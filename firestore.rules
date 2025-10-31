@@ -1,0 +1,123 @@
+/**
+ * @fileOverview
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for personal data (profiles, journals, chats) and allows public read access to therapist profiles.
+ * Data Structure:
+ *   - User profiles are stored in `/users/{userId}`, with all personal data nested under each user.
+ *   - Journal entries: `/users/{userId}/journal_entries/{journalEntryId}`.
+ *   - Chat sessions: `/users/{userId}/chat_sessions/{sessionId}`.
+ *   - Chat messages: `/users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}`.
+ *   - Therapist profiles are stored in `/therapist_profiles/{therapistId}` and are publicly readable.
+ *
+ * Key Security Decisions:
+ *   - User data is strictly owned and controlled by each user.
+ *   - Listing of users is disallowed.
+ *   - Therapist profiles are globally readable but writes are disallowed (TODO: to be defined).
+ *
+ * Denormalization for Authorization:
+ *   - The data structure inherently denormalizes ownership through path-based access control, avoiding the need for `get()` calls to determine ownership.
+ *
+ * Structural Segregation:
+ *   - Therapist profiles are stored in a separate collection to allow for public read access without compromising the security of user-specific data.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profiles.
+     * @path /users/{userId}
+     * @allow (create) - User with ID 'user123' can create their profile at /users/user123 if authenticated as 'user123'.
+     * @allow (get, update, delete) - User with ID 'user123' can read, update, and delete their profile at /users/user123 if authenticated as 'user123'.
+     * @deny (create) - User with ID 'user456' cannot create a profile at /users/user123.
+     * @deny (get, update, delete) - User with ID 'user456' cannot read, update, or delete the profile at /users/user123.
+     * @principle Enforces document ownership; users can only access their own profile.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Listing users is not permitted
+
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to journal entries for a specific user.
+     * @path /users/{userId}/journal_entries/{journalEntryId}
+     * @allow (create) - User with ID 'user123' can create a journal entry under /users/user123/journal_entries/entry1.
+     * @allow (get, list, update, delete) - User with ID 'user123' can read, list, update, and delete their journal entries under /users/user123/journal_entries/.
+     * @deny (create) - User with ID 'user456' cannot create a journal entry under /users/user123/journal_entries/entry1.
+     * @deny (get, list, update, delete) - User with ID 'user456' cannot read, list, update, or delete journal entries under /users/user123/journal_entries/.
+     * @principle Enforces document ownership; users can only access their own journal entries.
+     */
+    match /users/{userId}/journal_entries/{journalEntryId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to chat sessions for a specific user.
+     * @path /users/{userId}/chat_sessions/{sessionId}
+     * @allow (create) - User with ID 'user123' can create a chat session under /users/user123/chat_sessions/session1.
+     * @allow (get, list, update, delete) - User with ID 'user123' can read, list, update, and delete their chat sessions under /users/user123/chat_sessions/.
+     * @deny (create) - User with ID 'user456' cannot create a chat session under /users/user123/chat_sessions/session1.
+     * @deny (get, list, update, delete) - User with ID 'user456' cannot read, list, update, or delete chat sessions under /users/user123/chat_sessions/.
+     * @principle Enforces document ownership; users can only access their own chat sessions.
+     */
+    match /users/{userId}/chat_sessions/{sessionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to chat messages within a specific chat session for a user.
+     * @path /users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}
+     * @allow (create) - User with ID 'user123' can create a chat message under /users/user123/chat_sessions/session1/chat_messages/message1.
+     * @allow (get, list, update, delete) - User with ID 'user123' can read, list, update, and delete their chat messages under /users/user123/chat_sessions/session1/chat_messages/.
+     * @deny (create) - User with ID 'user456' cannot create a chat message under /users/user123/chat_sessions/session1/chat_messages/message1.
+     * @deny (get, list, update, delete) - User with ID 'user456' cannot read, list, update, or delete chat messages under /users/user123/chat_sessions/session1/chat_messages/.
+     * @principle Enforces document ownership; users can only access their own chat messages.
+     */
+    match /users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to therapist profiles.
+     * @path /therapist_profiles/{therapistId}
+     * @allow (get, list) - All users, including unauthenticated users, can read therapist profiles.
+     * @deny (create, update, delete) - No one can create, update, or delete therapist profiles (for now).
+     * @principle Allows public read access to therapist profiles; write access is restricted.
+     */
+    match /therapist_profiles/{therapistId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+  }
+
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return isSignedIn() && request.auth.uid == userId;
+  }
+
+  function isExistingOwner(userId) {
+    return isOwner(userId) && resource != null;
+  }
+}

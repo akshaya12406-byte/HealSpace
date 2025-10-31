@@ -1,0 +1,289 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the HealSpace application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "age": {
+          "type": "number",
+          "description": "User's age."
+        },
+        "parentalConsentGiven": {
+          "type": "boolean",
+          "description": "Indicates whether parental consent has been given (if required)."
+        },
+        "pendingApproval": {
+          "type": "boolean",
+          "description": "Indicates that a user is awaiting admin approval."
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Indicates that a user has been approved."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "age"
+      ]
+    },
+    "JournalEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "JournalEntry",
+      "type": "object",
+      "description": "Represents a journal entry created by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the JournalEntry entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N JournalEntry)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the journal entry."
+        },
+        "sentimentScore": {
+          "type": "number",
+          "description": "Sentiment score of the journal entry calculated by TensorFlow.js."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the journal entry was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "content",
+        "sentimentScore",
+        "createdAt"
+      ]
+    },
+    "ChatSession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatSession",
+      "type": "object",
+      "description": "Represents a chat session between a user and the Mitr chatbot.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ChatSession entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N ChatSession)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Timestamp indicating when the chat session started.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "Timestamp indicating when the chat session ended.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "startTime"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a single message within a chat session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ChatMessage entity."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Reference to ChatSession. (Relationship: ChatSession 1:N ChatMessage)"
+        },
+        "sender": {
+          "type": "string",
+          "description": "Indicates who sent the message (e.g., 'user' or 'mitr')."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "sessionId",
+        "sender",
+        "content",
+        "timestamp"
+      ]
+    },
+    "TherapistProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TherapistProfile",
+      "type": "object",
+      "description": "Represents a therapist profile in the marketplace.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TherapistProfile entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Therapist's name."
+        },
+        "specialty": {
+          "type": "string",
+          "description": "Therapist's area of expertise."
+        },
+        "languages": {
+          "type": "array",
+          "description": "List of languages spoken by the therapist.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of the therapist and their experience."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "specialty",
+        "languages"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information.  Path-based ownership ensures only the user can access their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/journal_entries/{journalEntryId}",
+        "definition": {
+          "entityName": "JournalEntry",
+          "schema": {
+            "$ref": "#/backend/entities/JournalEntry"
+          },
+          "description": "Stores journal entries for each user. Path-based ownership ensures only the user can access their own journal entries.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "journalEntryId",
+              "description": "The unique identifier for the journal entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/chat_sessions/{sessionId}",
+        "definition": {
+          "entityName": "ChatSession",
+          "schema": {
+            "$ref": "#/backend/entities/ChatSession"
+          },
+          "description": "Stores chat sessions for each user. Path-based ownership ensures only the user can access their own chat sessions.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "sessionId",
+              "description": "The unique identifier for the chat session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores chat messages within a chat session. Path-based ownership ensures only the user can access their own chat messages.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "sessionId",
+              "description": "The unique identifier for the chat session."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the chat message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/therapist_profiles/{therapistId}",
+        "definition": {
+          "entityName": "TherapistProfile",
+          "schema": {
+            "$ref": "#/backend/entities/TherapistProfile"
+          },
+          "description": "Stores therapist profiles.  Globally accessible.",
+          "params": [
+            {
+              "name": "therapistId",
+              "description": "The unique identifier for the therapist profile."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. User data is stored under `/users/{userId}`, providing clear ownership and simplifying security rules. Journal entries, chat sessions, and chat messages are nested under the user's document to maintain a clear hierarchy and ownership. The `TherapistProfiles` collection is separate as the authorization requirements for these profiles are different; they are globally accessible.\n\n**Authorization Independence (Denormalization):**  The structure avoids `get()` calls in security rules by ensuring all necessary authorization information is available within the document itself or through path-based ownership. For example, journal entries are stored under `/users/{userId}/journal_entries/{journalEntryId}`, making it straightforward to verify ownership via the path. The chatbot messages follow the same principle, where the messages are stored in paths under `/users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}`.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations by segregating data based on access control needs.  User-specific data is stored under the `/users/{userId}` collection, allowing for easy listing of a user's own data without the need for filtering based on document content. Therapist profiles are stored in a separate collection and are designed to be globally readable. This segregation simplifies security rules and optimizes query performance."
+  }
+}
