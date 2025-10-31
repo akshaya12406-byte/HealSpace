@@ -14,10 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth';
 import { HeartHandshake } from 'lucide-react';
 
-const formSchema = z.object({
+const ageGateSchema = z.object({
+  age: z.coerce.number().min(1, { message: 'Please enter your age.' }).max(120, { message: 'Please enter a valid age.' }),
+});
+
+const accountDetailsSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
-  age: z.coerce.number().min(1, { message: 'Please enter your age.' }),
 });
 
 export default function SignupPage() {
@@ -25,22 +28,45 @@ export default function SignupPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [step, setStep] = useState<'age' | 'details'>('age');
+  const [age, setAge] = useState<number | null>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const ageGateForm = useForm<z.infer<typeof ageGateSchema>>({
+    resolver: zodResolver(ageGateSchema),
     defaultValues: {
-      email: '',
-      password: '',
       age: undefined,
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const accountDetailsForm = useForm<z.infer<typeof accountDetailsSchema>>({
+    resolver: zodResolver(accountDetailsSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  function onAgeSubmit(values: z.infer<typeof ageGateSchema>) {
+    setAge(values.age);
+    if (values.age < 18) {
+      // Temporarily store age and move to details, consent will be next
+      setStep('details');
+    } else {
+      setStep('details');
+    }
+  }
+
+  async function onDetailsSubmit(values: z.infer<typeof accountDetailsSchema>) {
+    if (age === null) {
+        toast({ title: "Error", description: "Age not set, please go back."});
+        return;
+    }
+
     setIsLoading(true);
     try {
-      await signUpWithEmail(values.email, values.password, values.age);
-      if (values.age < 18) {
-        router.push('/pending-approval');
+      await signUpWithEmail(values.email, values.password, age);
+      if (age < 18) {
+        router.push(`/signup/parental-consent?email=${encodeURIComponent(values.email)}`);
       } else {
         router.push('/journal');
       }
@@ -81,66 +107,87 @@ export default function SignupPage() {
             <HeartHandshake className="h-10 w-10 mx-auto text-primary" />
           </Link>
           <CardTitle className="text-2xl font-headline">Create Your Space</CardTitle>
-          <CardDescription>Join HealSpace to start your wellness journey.</CardDescription>
+          <CardDescription>
+            {step === 'age'
+              ? 'First, please enter your age to continue.'
+              : 'Join HealSpace to start your wellness journey.'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="18" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+          {step === 'age' && (
+            <Form {...ageGateForm}>
+              <form onSubmit={ageGateForm.handleSubmit(onAgeSubmit)} className="space-y-4">
+                <FormField
+                  control={ageGateForm.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="18" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full">
+                  Continue
+                </Button>
+              </form>
+            </Form>
+          )}
+
+          {step === 'details' && (
+            <>
+              <Form {...accountDetailsForm}>
+                <form onSubmit={accountDetailsForm.handleSubmit(onDetailsSubmit)} className="space-y-4">
+                  <FormField
+                    control={accountDetailsForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="name@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={accountDetailsForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="ghost" onClick={() => setStep('age')} className='w-full'>Back</Button>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                {isGoogleLoading ? 'Signing In...' : 'Sign up with Google'}
               </Button>
-            </form>
-          </Form>
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-            {isGoogleLoading ? 'Signing In...' : 'Sign up with Google'}
-          </Button>
+            </>
+          )}
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link href="/login" className="underline hover:text-primary">

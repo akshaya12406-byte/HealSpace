@@ -10,7 +10,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { app } from './config';
-import { createUserProfile } from './firestore';
+import { createUserProfile, updateUserProfileStatus } from './firestore';
 
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
@@ -41,3 +41,12 @@ export const signOut = (): Promise<void> => {
 export const onAuthStateChanged = (callback: (user: User | null) => void) => {
   return firebaseOnAuthStateChanged(auth, callback);
 };
+
+export const requestParentalConsent = async (userId: string, parentEmail: string) => {
+    // In a real application, this would trigger a backend process to send an email.
+    // For this mock-up, we'll just log it and update the user's profile.
+    console.log(`Parental consent request for user ${userId} sent to ${parentEmail}`);
+    // We could add the parent's email to the user's document for tracking.
+    await updateUserProfileStatus(userId, "pending_approval");
+    return true;
+}
