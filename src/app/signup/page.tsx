@@ -34,7 +34,7 @@ export default function SignupPage() {
   const ageGateForm = useForm<z.infer<typeof ageGateSchema>>({
     resolver: zodResolver(ageGateSchema),
     defaultValues: {
-      age: undefined,
+      age: '' as any,
     },
   });
 
