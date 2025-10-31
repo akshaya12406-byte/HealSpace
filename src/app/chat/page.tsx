@@ -19,7 +19,6 @@ interface DisplayMessage {
   content: string;
 }
 
-
 const conversationStarters = [
   "I'm feeling really anxious today.",
   "How can I deal with stress at work?",
@@ -93,7 +92,7 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-       // Convert the display messages to the format expected by the Genkit flow.
+      // Convert the display messages to the format expected by the Genkit flow.
       const flowHistory: MessageData[] = newMessages.slice(0, -1).map(m => ({
         role: m.role,
         content: [{ text: m.content }]

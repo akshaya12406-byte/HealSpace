@@ -14,8 +14,8 @@ import {z, type MessageData} from 'genkit';
 const HealBuddyWellnessGuidanceInputSchema = z.object({
   message: z.string().describe('The user message to the chatbot.'),
   chatHistory: z.array(z.object({
-    role: z.enum(['user', 'model', 'system', 'tool']),
-    content: z.array(z.any()),
+    role: z.enum(['user', 'model']),
+    content: z.array(z.object({ text: z.string() })),
   })).optional().describe('The chat history between the user and the chatbot.'),
 });
 export type HealBuddyWellnessGuidanceInput = z.infer<typeof HealBuddyWellnessGuidanceInputSchema>;
@@ -61,32 +61,42 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
   },
   async ({ message, chatHistory = [] }) => {
     
-    const result = await prompt({
-        history: chatHistory,
-        message: message,
-    });
-
-    const toolRequest = result.toolRequest('suggestTherapist');
+    // The history must include the current user message.
+    const fullHistory: MessageData[] = [
+      ...chatHistory,
+      { role: 'user', content: [{ text: message }] },
+    ];
     
-    if (toolRequest) {
-        const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
+    try {
+      const result = await prompt({
+        history: fullHistory,
+      });
+
+      const toolRequest = result.toolRequest('suggestTherapist');
+      
+      if (toolRequest) {
+          const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
 
 [Browse our therapist marketplace](/therapists) to find the right fit for you.`;
+          return {
+              response: handoffResponse,
+          };
+      }
+
+      const outputText = result.output;
+      if (!outputText) {
+          throw new Error('AI model did not return output.');
+      }
+
+      return {
+        response: outputText,
+      };
+    } catch (e: any) {
+        console.error('Error during AI chatbot interaction:', e);
+        // Fallback mechanism: provide a pre-scripted response in case of API failure
         return {
-            response: handoffResponse,
+          response: "I'm having a little trouble connecting right now. Please try again in a moment. 😊",
         };
     }
-
-    const outputText = result.output;
-    if (!outputText) {
-        console.error('Error: AI model did not return output.');
-        return {
-            response: "I'm having a little trouble thinking right now. Please try again in a moment. 😊",
-        };
-    }
-
-    return {
-      response: outputText,
-    };
   }
 );
