@@ -82,8 +82,12 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
         };
     }
 
+    if (!result.output) {
+        return { response: "I'm having some trouble connecting at the moment. Please try again soon. 😊" };
+    }
+
     return {
-      response: result.output!.response,
+      response: result.output.response,
     };
   }
 );
