@@ -96,20 +96,17 @@ export default function ChatPage() {
       const flowHistory: MessageData[] = newMessages.map(m => ({
         role: m.role,
         content: [{text: m.content}]
-      }));
-      
-      // Remove the latest user message from the history sent to the flow
-      const historyForFlow = flowHistory.slice(0, -1);
+      })).slice(0, -1); // Exclude the latest user message for the history
 
 
-      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory: historyForFlow });
+      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory: flowHistory });
       
       const assistantMessage: DisplayMessage = { role: 'model', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error("Chat API error:", error);
-      const errorMessage: DisplayMessage = { role: 'model', content: "I'm having a little trouble connecting right now. Please try again in a moment. 😊" };
+      console.error("Failed to call the chat API:", error);
+      const errorMessage: DisplayMessage = { role: 'model', content: "Oops! Could not reach the server. Please check your connection. 😊" };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
