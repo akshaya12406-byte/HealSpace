@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { healBuddyWellnessGuidance } from '@/ai/flows/ai-chatbot-guidance';
+import { healBuddyWellnessGuidance, type HealBuddyWellnessGuidanceInput } from '@/ai/flows/ai-chatbot-guidance';
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
 import { type MessageData } from 'genkit';
@@ -93,13 +93,18 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const flowHistory: MessageData[] = newMessages.map(m => ({
+       // Convert the display messages to the format expected by the Genkit flow.
+      const flowHistory: MessageData[] = newMessages.slice(0, -1).map(m => ({
         role: m.role,
-        content: [{text: m.content}]
-      })).slice(0, -1); // Exclude the latest user message for the history
+        content: [{ text: m.content }]
+      }));
 
+      const flowInput: HealBuddyWellnessGuidanceInput = {
+        message: messageContent,
+        chatHistory: flowHistory,
+      };
 
-      const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory: flowHistory });
+      const response = await healBuddyWellnessGuidance(flowInput);
       
       const assistantMessage: DisplayMessage = { role: 'model', content: response.response };
       setMessages(prev => [...prev, assistantMessage]);

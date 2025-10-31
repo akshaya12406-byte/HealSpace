@@ -60,36 +60,33 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
   async ({ message, chatHistory = [] }) => {
-    try {
-      const result = await prompt({
-          history: chatHistory,
-          message: message,
-      });
+    
+    const result = await prompt({
+        history: chatHistory,
+        message: message,
+    });
 
-      const toolRequest = result.toolRequest('suggestTherapist');
-      
-      if (toolRequest) {
-          const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
+    const toolRequest = result.toolRequest('suggestTherapist');
+    
+    if (toolRequest) {
+        const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
 
 [Browse our therapist marketplace](/therapists) to find the right fit for you.`;
-          return {
-              response: handoffResponse,
-          };
-      }
-
-      if (!result.output) {
-          throw new Error("No output from AI model.");
-      }
-
-      return {
-        response: result.output as string,
-      };
-    } catch (e: any) {
-        console.error('Error during AI chatbot interaction:', e);
-        // Fallback mechanism: provide a pre-scripted response in case of API failure
         return {
-            response: "I'm having a little trouble connecting right now. Please try again in a moment. 😊",
+            response: handoffResponse,
         };
     }
+
+    const outputText = result.output;
+    if (!outputText) {
+        console.error('Error: AI model did not return output.');
+        return {
+            response: "I'm having a little trouble thinking right now. Please try again in a moment. 😊",
+        };
+    }
+
+    return {
+      response: outputText,
+    };
   }
 );
