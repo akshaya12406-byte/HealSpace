@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/journal-sentiment-analysis.ts';
 import '@/ai/flows/ai-chatbot-guidance.ts';
+import '@/ai/flows/api-test-flow.ts';
