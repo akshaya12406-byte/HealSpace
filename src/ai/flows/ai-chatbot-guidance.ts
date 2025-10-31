@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { Message } from 'genkit/ai';
 
 const HealBuddyWellnessGuidanceInputSchema = z.object({
   message: z.string().describe('The user message to the chatbot.'),
@@ -53,14 +54,6 @@ const prompt = ai.definePrompt({
 If the user expresses a clear desire to talk to a person or professional, or if their issues seem complex and beyond the scope of a chatbot, use the suggestTherapist tool.
 
 Keep responses under 50 words.`,
-  prompt: `{{#each chatHistory}}
-{{#if (eq this.role "user")}}
-User: {{{this.content}}}
-{{else}}
-HealBuddy: {{{this.content}}}
-{{/if}}
-{{/each}}
-User: {{{message}}}`,
 });
 
 const healBuddyWellnessGuidanceFlow = ai.defineFlow(
@@ -69,29 +62,29 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     inputSchema: HealBuddyWellnessGuidanceInputSchema,
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
-  async input => {
-    try {
-        const result = await prompt(input);
-        const toolRequest = result.toolRequest('suggestTherapist');
-        
-        if (toolRequest) {
-            const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
+  async ({ message, chatHistory = [] }) => {
+    const history = chatHistory.map(
+      (msg) => new Message({ role: msg.role, content: [{ text: msg.content }] })
+    );
+
+    const result = await prompt({
+        message,
+        chatHistory
+    }, { history });
+
+    const toolRequest = result.toolRequest('suggestTherapist');
+    
+    if (toolRequest) {
+        const handoffResponse = `It sounds like talking to a professional could be really helpful. You're taking a brave step. I can help you find someone to talk to. 
 
 [Browse our therapist marketplace](/therapists) to find the right fit for you.`;
-            return {
-                response: handoffResponse,
-            };
-        }
-
         return {
-          response: result.output!.response,
+            response: handoffResponse,
         };
-    } catch (e: any) {
-      console.error('Error during AI chatbot interaction:', e);
-      // Fallback mechanism: provide a pre-scripted response in case of API failure
-      return {
-        response: 'I am currently experiencing technical difficulties. Please try again later. I am here to listen when you are ready. 😊',
-      };
     }
+
+    return {
+      response: result.output!.response,
+    };
   }
 );
