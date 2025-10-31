@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { healBuddyWellnessGuidance, HealBuddyWellnessGuidanceInput } from '@/ai/flows/ai-chatbot-guidance';
 import { cn } from '@/lib/utils';
 import { Bot, Loader2, Send } from 'lucide-react';
-import { Message } from 'genkit/ai';
+import { type MessageData } from 'genkit';
 
 interface DisplayMessage {
   role: 'user' | 'assistant';
@@ -92,7 +92,10 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const flowHistory = messages.map(m => new Message({role: m.role, content: [{text: m.content}]}));
+      const flowHistory: MessageData[] = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        content: [{text: m.content}]
+      }));
 
       const response = await healBuddyWellnessGuidance({ message: messageContent, chatHistory: flowHistory });
       
