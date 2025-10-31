@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z, Message} from 'genkit';
+import {z, type MessageData} from 'genkit';
 
 const HealBuddyWellnessGuidanceInputSchema = z.object({
   message: z.string().describe('The user message to the chatbot.'),
@@ -45,8 +45,6 @@ const suggestTherapistTool = ai.defineTool(
 
 const prompt = ai.definePrompt({
   name: 'healBuddyWellnessGuidancePrompt',
-  input: {schema: HealBuddyWellnessGuidanceInputSchema},
-  output: {schema: HealBuddyWellnessGuidanceOutputSchema},
   tools: [suggestTherapistTool],
   system: `You are HealBuddy, an AI-powered chatbot designed to provide empathetic wellness guidance. You communicate in Hinglish (a mix of Hindi and English) and use principles of Cognitive Behavioral Therapy (CBT) to help users explore their feelings in a safe and supportive environment. Your responses should be concise, supportive, and culturally sensitive. Always prioritize user safety and well-being. If the user expresses thoughts of self-harm or suicide, immediately direct them to seek professional help and provide resources like the Suicide Prevention Lifeline. Do not give any medical or diagnostic advice. Focus on guiding users to explore and understand their feelings, not on providing definitive solutions. Be short and conversational. Add a smiley emoji at the end of every message.
 
@@ -62,12 +60,10 @@ const healBuddyWellnessGuidanceFlow = ai.defineFlow(
     outputSchema: HealBuddyWellnessGuidanceOutputSchema,
   },
   async ({ message, chatHistory = [] }) => {
-
-    const history = chatHistory.map(message => ({
-      role: message.role as 'user' | 'model',
-      content: [{ text: message.content as string }]
+    const history: MessageData[] = chatHistory.map(msg => ({
+      role: msg.role,
+      content: msg.content
     }));
-
 
     const result = await prompt({
         message,
