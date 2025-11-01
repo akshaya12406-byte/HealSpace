@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { BookingButton } from '@/components/therapists/booking-button';
 
 export default function TherapistsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -159,7 +160,7 @@ export default function TherapistsPage() {
                       {therapist.languages.map(l => <Badge key={l} variant="outline">{l}</Badge>)}
                     </div>
                   </div>
-                  <Button className="w-full mt-2" onClick={() => handleBookClick(therapist)} aria-label={`Book a session with ${therapist.name}`}>Book a Session</Button>
+                  <BookingButton therapistName={therapist.name} />
                 </div>
               </CardContent>
             </Card>
