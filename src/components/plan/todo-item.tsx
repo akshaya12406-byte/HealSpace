@@ -22,7 +22,6 @@ import { Button } from '../ui/button';
 
 interface TodoItemProps {
   item: WellnessIdea;
-  onRemove: () => void;
 }
 
 // Map string names to Lucide components
@@ -42,13 +41,13 @@ const iconMap: { [key: string]: LucideIcon } = {
 };
 
 
-export default function TodoItem({ item, onRemove }: TodoItemProps) {
+export default function TodoItem({ item }: TodoItemProps) {
   const Icon = iconMap[item.icon] || Heart; // Default to Heart icon if not found
 
   const content = (
     <div
       className={cn(
-        'group flex items-center p-4 rounded-lg border transition-all bg-card relative',
+        'group flex items-center p-4 rounded-lg border transition-all bg-card',
         item.internalLink
           ? 'hover:bg-accent/50 hover:border-primary/50 cursor-pointer'
           : ''
@@ -61,19 +60,6 @@ export default function TodoItem({ item, onRemove }: TodoItemProps) {
          <p className="font-medium text-card-foreground">{item.title}</p>
         <p className="text-sm text-muted-foreground">{item.category}</p>
       </div>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="absolute top-2 right-2 h-6 w-6 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
-        onClick={(e) => {
-            e.stopPropagation(); // Prevent link navigation if it's a link item
-            e.preventDefault();
-            onRemove();
-        }}
-        aria-label={`Remove ${item.title}`}
-    >
-        <X className="h-4 w-4" />
-      </Button>
     </div>
   );
 
