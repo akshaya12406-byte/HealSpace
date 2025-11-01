@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { BookingButton } from '@/components/therapists/booking-button';
 
 export default function TherapistsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -79,7 +78,7 @@ export default function TherapistsPage() {
 
       toast({
         title: '✅ Your booking request has been sent!',
-        description: `Your request for a session with ${selectedTherapist.name} has been sent.`,
+        description: `A confirmation has been sent to ${selectedTherapist.name}.`,
       });
 
     } catch (error) {
@@ -160,7 +159,9 @@ export default function TherapistsPage() {
                       {therapist.languages.map(l => <Badge key={l} variant="outline">{l}</Badge>)}
                     </div>
                   </div>
-                  <BookingButton therapistName={therapist.name} />
+                  <Button className="w-full mt-2" onClick={() => handleBookClick(therapist)}>
+                    Book Session
+                 </Button>
                 </div>
               </CardContent>
             </Card>
@@ -176,9 +177,9 @@ export default function TherapistsPage() {
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Your Booking</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Your Booking Request</AlertDialogTitle>
             <AlertDialogDescription>
-              This will send a request to {selectedTherapist?.name} for a new session. They will contact you at {user?.email} to confirm the details.
+              This will send a booking request to {selectedTherapist?.name}. They will be notified and will contact you at <strong>{user?.email}</strong> to finalize the details.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
