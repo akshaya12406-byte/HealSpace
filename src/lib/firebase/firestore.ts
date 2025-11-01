@@ -1,3 +1,4 @@
+
 import { doc, setDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { db } from './config';
@@ -28,7 +29,7 @@ export const createUserProfile = async (user: User, additionalData: Partial<User
         displayName,
         email,
         photoURL,
-        createdAt,
+        createdAt: Timestamp.fromDate(createdAt),
         role: 'user', // Default role
         ...additionalData,
       });

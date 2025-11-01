@@ -66,27 +66,28 @@ export default function TherapistsPage() {
         },
         body: JSON.stringify({
           therapistName: selectedTherapist.name,
-          therapistEmail: 'akshaya12406@gmail.com', // Per your request
-          userName: user.displayName || 'Anonymous User',
-          userEmail: user.email || 'No email provided',
+          userName: user.displayName || user.email || 'A HealSpace User',
+          userEmail: user.email,
         }),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to send booking request.');
+        throw new Error(result.message || 'Failed to send booking request.');
       }
 
       toast({
         title: '✅ Your booking request has been sent!',
-        description: `A confirmation has been sent to ${selectedTherapist.name}.`,
+        description: `${selectedTherapist.name} will contact you shortly to finalize details.`,
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: '⚠️ Something went wrong.',
-        description: 'Please try again later.',
+        description: error.message || 'Could not send booking request. Please try again later.',
       });
     } finally {
       setIsBooking(false);
