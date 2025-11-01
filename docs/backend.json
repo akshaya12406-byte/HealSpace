@@ -30,12 +30,21 @@
         "approved": {
           "type": "boolean",
           "description": "Indicates that a user has been approved."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role in the application.",
+          "enum": [
+            "user",
+            "therapist"
+          ]
         }
       },
       "required": [
         "id",
         "email",
-        "age"
+        "age",
+        "role"
       ]
     },
     "JournalEntry": {
@@ -177,6 +186,47 @@
         "specialty",
         "languages"
       ]
+    },
+    "ChatRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatRequest",
+      "type": "object",
+      "description": "Represents a user's request to chat with a therapist.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ChatRequest entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile of the user requesting the chat."
+        },
+        "therapistId": {
+          "type": "string",
+          "description": "Reference to the UserProfile of the therapist receiving the request."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the chat request.",
+          "enum": [
+            "pending",
+            "accepted",
+            "declined"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the request was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "therapistId",
+        "status",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -282,8 +332,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/chat_requests/{requestId}",
+        "definition": {
+          "entityName": "ChatRequest",
+          "schema": {
+            "$ref": "#/backend/entities/ChatRequest"
+          },
+          "description": "Stores chat requests from users to therapists. Therapists can list requests where their ID matches.",
+          "params": [
+            {
+              "name": "requestId",
+              "description": "The unique identifier for the chat request."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. User data is stored under `/users/{userId}`, providing clear ownership and simplifying security rules. Journal entries, chat sessions, and chat messages are nested under the user's document to maintain a clear hierarchy and ownership. The `TherapistProfiles` collection is separate as the authorization requirements for these profiles are different; they are globally accessible.\n\n**Authorization Independence (Denormalization):**  The structure avoids `get()` calls in security rules by ensuring all necessary authorization information is available within the document itself or through path-based ownership. For example, journal entries are stored under `/users/{userId}/journal_entries/{journalEntryId}`, making it straightforward to verify ownership via the path. The chatbot messages follow the same principle, where the messages are stored in paths under `/users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}`.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations by segregating data based on access control needs.  User-specific data is stored under the `/users/{userId}` collection, allowing for easy listing of a user's own data without the need for filtering based on document content. Therapist profiles are stored in a separate collection and are designed to be globally readable. This segregation simplifies security rules and optimizes query performance."
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. User data is stored under `/users/{userId}`, providing clear ownership and simplifying security rules. Journal entries, chat sessions, and chat messages are nested under the user's document to maintain a clear hierarchy and ownership. The `TherapistProfiles` collection is separate as the authorization requirements for these profiles are different; they are globally accessible.\n\n**Authorization Independence (Denormalization):**  The structure avoids `get()` calls in security rules by ensuring all necessary authorization information is available within the document itself or through path-based ownership. For example, journal entries are stored under `/users/{userId}/journal_entries/{journalEntryId}`, making it straightforward to verify ownership via the path. The chatbot messages follow the same principle, where the messages are stored in paths under `/users/{userId}/chat_sessions/{sessionId}/chat_messages/{messageId}`.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations by segregating data based on access control needs.  User-specific data is stored under the `/users/{userId}` collection, allowing for easy listing of a user's own data without the need for filtering based on document content. Therapist profiles are stored in a separate collection and are designed to be globally readable. This segregation simplifies security rules and optimizes query performance. The new `chat_requests` collection allows therapists to securely query for requests directed at them without exposing other therapists' requests."
   }
 }

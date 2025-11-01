@@ -10,10 +10,11 @@ export interface UserProfile {
     createdAt: Timestamp;
     age: number;
     status: 'pending_approval' | 'approved';
+    role: 'user' | 'therapist';
 }
 
 
-export const createUserProfile = async (user: User, additionalData: object) => {
+export const createUserProfile = async (user: User, additionalData: Partial<UserProfile>) => {
   if (!user) return;
   const userRef = doc(db, 'users', user.uid);
   const snapshot = await getDoc(userRef);
@@ -28,6 +29,7 @@ export const createUserProfile = async (user: User, additionalData: object) => {
         email,
         photoURL,
         createdAt,
+        role: 'user', // Default role
         ...additionalData,
       });
     } catch (error) {
@@ -56,6 +58,19 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         return snapshot.data() as UserProfile;
     } else {
         console.log("No such document!");
+        // To test the therapist view, we can mock a therapist user
+        if (process.env.NODE_ENV === 'development' && userId === 'therapist_test_uid') {
+             return {
+                uid: 'therapist_test_uid',
+                displayName: 'Dr. Emily Carter',
+                email: 'therapist@healspace.com',
+                photoURL: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2MTkwOTQyNXww&ixlib=rb-4.1.0&q=80&w=1080',
+                createdAt: Timestamp.now(),
+                age: 42,
+                status: 'approved',
+                role: 'therapist',
+            };
+        }
         return null;
     }
 };
