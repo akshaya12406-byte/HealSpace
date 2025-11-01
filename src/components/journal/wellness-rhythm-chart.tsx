@@ -46,6 +46,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return <Dot cx={cx} cy={cy} r={3} fill="hsl(var(--muted-foreground))" />;
   };
 
+  const sentimentTickFormatter = (value: number) => {
+    if (value === 1) return 'Positive';
+    if (value === 0) return 'Neutral';
+    if (value === -1) return 'Negative';
+    return '';
+  };
+
 export default function WellnessRhythmChart({ data, onChartClick }: WellnessRhythmChartProps) {
   const formattedData = data.map(item => ({
     name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -58,7 +65,7 @@ export default function WellnessRhythmChart({ data, onChartClick }: WellnessRhyt
   return (
     <div className="h-[250px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={formattedData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }} onClick={onChartClick}>
+            <AreaChart data={formattedData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }} onClick={onChartClick}>
                 <defs>
                     <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
@@ -67,7 +74,14 @@ export default function WellnessRhythmChart({ data, onChartClick }: WellnessRhyt
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <YAxis domain={[-1, 1]} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis 
+                    domain={[-1, 1]} 
+                    ticks={[-1, 0, 1]}
+                    tickFormatter={sentimentTickFormatter}
+                    stroke="hsl(var(--muted-foreground))" 
+                    fontSize={12}
+                    width={70}
+                />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
                 <Area 
                     type="monotone" 
