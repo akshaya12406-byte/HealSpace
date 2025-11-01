@@ -23,7 +23,6 @@ const navLinks = [
   { href: '/plan', label: 'My Day' },
   { href: '/chat', label: 'Chat with HealBuddy' },
   { href: '/therapists', label: 'Therapists' },
-  { href: '/circles', label: 'Circles' },
 ];
 
 export default function Navbar() {

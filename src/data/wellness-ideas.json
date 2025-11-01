@@ -54,12 +54,5 @@
     "title": "Read a chapter of a book",
     "category": "Relaxation",
     "icon": "book"
-  },
-  {
-    "id": 10,
-    "title": "Explore peer support circles",
-    "category": "Connection",
-    "icon": "circle-dot",
-    "internalLink": "/circles"
   }
 ]
