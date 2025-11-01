@@ -30,6 +30,16 @@ export default function PlanPage() {
     })
   };
 
+  const handleRemoveTodo = (indexToRemove: number) => {
+    const itemToRemove = myTimeline[indexToRemove];
+    setMyTimeline((prev) => prev.filter((_, index) => index !== indexToRemove));
+    toast({
+        title: "Activity Removed",
+        description: `"${itemToRemove.title}" has been removed from your timeline.`,
+        variant: 'destructive'
+    })
+  };
+
   if (authLoading || !user) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -62,7 +72,8 @@ export default function PlanPage() {
                   myTimeline.map((item, index) => (
                       <TodoItem 
                         key={`${item.id}-${index}`} 
-                        item={item} 
+                        item={item}
+                        onRemove={() => handleRemoveTodo(index)} 
                       />
                   ))
                 ) : (
