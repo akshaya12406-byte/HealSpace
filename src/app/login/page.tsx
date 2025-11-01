@@ -66,13 +66,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="mx-auto w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="mx-auto w-full max-w-sm border-0 shadow-lg sm:border sm:shadow-sm">
         <CardHeader className="text-center">
           <Link href="/" className="mb-4 inline-block">
              <HeartHandshake className="h-10 w-10 mx-auto text-primary" />
           </Link>
-          <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-headline font-semibold">Welcome Back</CardTitle>
           <CardDescription>Enter your credentials to access your space.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
@@ -114,15 +114,15 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+          <Button variant="outline" className="w-full font-semibold" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
             {isGoogleLoading ? 'Signing In...' : 'Sign in with Google'}
           </Button>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
-            <Link href="/signup" className="underline hover:text-primary">
+            <Link href="/signup" className="underline hover:text-primary font-semibold">
               Sign up
             </Link>
           </p>
