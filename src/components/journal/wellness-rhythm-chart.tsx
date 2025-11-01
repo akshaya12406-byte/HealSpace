@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       return (
         <Card className="p-2">
           <p className="label">{`Date : ${label}`}</p>
-          <p className="intro">{`Sentiment Score : ${payload[0].value.toFixed(2)}`}</p>
+          <p className="intro">{`Wellness Score : ${payload[0].value.toFixed(2)}`}</p>
         </Card>
       );
     }
@@ -46,13 +46,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return <Dot cx={cx} cy={cy} r={3} fill="hsl(var(--muted-foreground))" />;
   };
 
-  const sentimentTickFormatter = (value: number) => {
-    if (value === 1) return 'Positive';
-    if (value === 0) return 'Neutral';
-    if (value === -1) return 'Negative';
-    return '';
-  };
-
 export default function WellnessRhythmChart({ data, onChartClick }: WellnessRhythmChartProps) {
   const formattedData = data.map(item => ({
     name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -75,12 +68,11 @@ export default function WellnessRhythmChart({ data, onChartClick }: WellnessRhyt
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <YAxis 
-                    domain={[-1, 1]} 
-                    ticks={[-1, 0, 1]}
-                    tickFormatter={sentimentTickFormatter}
+                    domain={[1, 5]} 
+                    ticks={[1, 2, 3, 4, 5]}
                     stroke="hsl(var(--muted-foreground))" 
                     fontSize={12}
-                    width={70}
+                    width={30}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '3 3' }} />
                 <Area 

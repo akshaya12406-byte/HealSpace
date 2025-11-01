@@ -24,6 +24,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// Map the [-1, 1] sentiment score to a [1, 5] wellness scale
+const toWellnessScore = (sentimentScore: number) => {
+    return sentimentScore * 2 + 3;
+};
+
 // Pre-defined data for the graph for the last 6 days.
 const getInitialSentimentData = (): SentimentData[] => {
   const today = new Date();
@@ -31,8 +36,8 @@ const getInitialSentimentData = (): SentimentData[] => {
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(today.getDate() - i);
-    // Use a pseudo-random score for past days and 0 for today
-    const score = i === 0 ? 0 : Math.sin(i) * 0.5;
+    // Use a pseudo-random score for past days and 3 (neutral) for today
+    const score = i === 0 ? 3 : toWellnessScore(Math.sin(i) * 0.5);
     data.push({
       date: date.toISOString().split('T')[0],
       score: score,
@@ -43,7 +48,7 @@ const getInitialSentimentData = (): SentimentData[] => {
 
 // Simple sentiment mapping
 const getSentimentFromTfScore = (score: number): { label: string; score: number } => {
-    const scaledScore = (score - 0.5) * 2;
+    const scaledScore = (score - 0.5) * 2; // Original score in [-1, 1]
     let label = 'Neutral';
     if (scaledScore > 0.3) label = 'Positive';
     else if (scaledScore < -0.3) label = 'Negative';
@@ -57,7 +62,7 @@ export default function JournalPage() {
   const [journalEntry, setJournalEntry] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [analysis, setAnalysis] = useState<{ sentimentLabel: string, sentimentScore: number } | null>(null);
+  const [analysis, setAnalysis] = useState<{ sentimentLabel: string, wellnessScore: number } | null>(null);
   const [sentimentHistory, setSentimentHistory] = useState<SentimentData[]>([]);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   const [modalInputValue, setModalInputValue] = useState('');
@@ -98,14 +103,15 @@ export default function JournalPage() {
       const data = await embeddings.data();
       const score = data.reduce((a, b) => a + b, 0) / data.length;
       const { label, score: sentimentScore } = getSentimentFromTfScore(score);
+      const wellnessScore = toWellnessScore(sentimentScore);
       
-      setAnalysis({ sentimentLabel: label, sentimentScore });
+      setAnalysis({ sentimentLabel: label, wellnessScore: wellnessScore });
 
       const todayStr = new Date().toISOString().split('T')[0];
       setSentimentHistory(prev => {
           const newHistory = [...prev];
           const todayIndex = newHistory.findIndex(d => d.date === todayStr);
-          const newPoint = { date: todayStr, score: sentimentScore };
+          const newPoint = { date: todayStr, score: wellnessScore };
           if(todayIndex > -1) {
               newHistory[todayIndex] = newPoint;
           } else {
@@ -186,7 +192,7 @@ export default function JournalPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Today's Entry</CardTitle>
-                <CardDescription>Click on today's bar in the chart to log your feelings.</CardDescription>
+                <CardDescription>Click on today's point in the chart to log your feelings.</CardDescription>
               </CardHeader>
               <CardContent>
                   <Textarea
@@ -210,7 +216,7 @@ export default function JournalPage() {
                     Current feeling is: <span className="font-bold text-primary">{analysis.sentimentLabel}</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Sentiment Score: {analysis.sentimentScore.toFixed(2)}
+                    Wellness Score (1-5): {analysis.wellnessScore.toFixed(2)}
                   </p>
                 </CardContent>
               </Card>
@@ -219,7 +225,7 @@ export default function JournalPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Your Wellness Rhythm</CardTitle>
-                <CardDescription>A 7-day view of your emotional journey. Click today's bar to add an entry.</CardDescription>
+                <CardDescription>A 7-day view of your emotional journey. Click today's point to add an entry.</CardDescription>
               </CardHeader>
               <CardContent>
                 <WellnessRhythmChart data={sentimentHistory} onChartClick={handleChartClick} />
@@ -235,7 +241,7 @@ export default function JournalPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>How are you feeling today?</AlertDialogTitle>
             <AlertDialogDescription>
-              Write down your thoughts and feelings. The graph will update with a sentiment score.
+              Write down your thoughts and feelings. The graph will update with a wellness score.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Textarea
@@ -253,5 +259,3 @@ export default function JournalPage() {
     </>
   );
 }
-
-    
