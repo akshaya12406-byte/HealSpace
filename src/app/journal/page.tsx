@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -9,34 +10,45 @@ import { useAuth } from '@/hooks/use-auth';
 import WellnessRhythmChart, { type SentimentData } from '@/components/journal/wellness-rhythm-chart';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-
 import * as tf from '@tensorflow/tfjs';
 import * as use from '@tensorflow-models/universal-sentence-encoder';
 import { Progress } from '@/components/ui/progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
+// Pre-defined data for the graph for the last 6 days.
 const getInitialSentimentData = (): SentimentData[] => {
   const today = new Date();
-  return Array.from({ length: 7 }, (_, i) => {
+  const data: SentimentData[] = [];
+  for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
-    date.setDate(today.getDate() - (6 - i));
-    return {
+    date.setDate(today.getDate() - i);
+    // Use a pseudo-random score for past days and 0 for today
+    const score = i === 0 ? 0 : Math.sin(i) * 0.5;
+    data.push({
       date: date.toISOString().split('T')[0],
-      score: 0,
-    };
-  });
+      score: score,
+    });
+  }
+  return data;
 };
 
-// Simple sentiment mapping - a real model would be more complex
+// Simple sentiment mapping
 const getSentimentFromTfScore = (score: number): { label: string; score: number } => {
-    // This is a dummy conversion. A real model would require a trained classifier on top of USE.
-    // For this demo, we'll simulate a score based on tensor values.
-    const scaledScore = (score - 0.5) * 2; // scale to -1 to 1
+    const scaledScore = (score - 0.5) * 2;
     let label = 'Neutral';
     if (scaledScore > 0.3) label = 'Positive';
     else if (scaledScore < -0.3) label = 'Negative';
     return { label, score: scaledScore };
 };
-
 
 export default function JournalPage() {
   const { user, loading: authLoading } = useAuth();
@@ -47,9 +59,10 @@ export default function JournalPage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [analysis, setAnalysis] = useState<{ sentimentLabel: string, sentimentScore: number } | null>(null);
   const [sentimentHistory, setSentimentHistory] = useState<SentimentData[]>([]);
+  const [isInputModalOpen, setIsInputModalOpen] = useState(false);
+  const [modalInputValue, setModalInputValue] = useState('');
 
   const modelRef = useRef<use.UniversalSentenceEncoder | null>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastNudgeScore = useRef<number | null>(null);
 
   useEffect(() => {
@@ -72,15 +85,9 @@ export default function JournalPage() {
       }
     }
     loadModel();
-
-    return () => {
-        if(debounceTimeoutRef.current) {
-            clearTimeout(debounceTimeoutRef.current);
-        }
-    }
   }, [toast]);
 
-  const analyzeInRealTime = useCallback(async (text: string) => {
+  const analyzeSentiment = useCallback(async (text: string) => {
     if (!modelRef.current || !text.trim()) {
       setAnalysis(null);
       return;
@@ -89,13 +96,11 @@ export default function JournalPage() {
     try {
       const embeddings = await modelRef.current.embed([text]);
       const data = await embeddings.data();
-      // This is a simplified sentiment calculation.
       const score = data.reduce((a, b) => a + b, 0) / data.length;
       const { label, score: sentimentScore } = getSentimentFromTfScore(score);
       
       setAnalysis({ sentimentLabel: label, sentimentScore });
 
-      // Update chart
       const todayStr = new Date().toISOString().split('T')[0];
       setSentimentHistory(prev => {
           const newHistory = [...prev];
@@ -110,7 +115,6 @@ export default function JournalPage() {
           return newHistory;
       });
 
-      // Proactive Nudge Logic
       if (sentimentScore < -0.5 && (!lastNudgeScore.current || lastNudgeScore.current >= -0.5)) {
         toast({
           title: 'A Heavy Day',
@@ -130,20 +134,20 @@ export default function JournalPage() {
     }
   }, [router, toast]);
 
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = e.target.value;
-    setJournalEntry(newText);
-    
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+  const handleChartClick = (data: any) => {
+    const clickedData = data?.activePayload?.[0]?.payload;
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (clickedData?.date === todayStr) {
+      setModalInputValue(journalEntry); // Pre-fill with current journal entry
+      setIsInputModalOpen(true);
     }
-    
-    debounceTimeoutRef.current = setTimeout(() => {
-        analyzeInRealTime(newText);
-    }, 500); // Debounce for 500ms
   };
 
+  const handleModalSubmit = () => {
+    setJournalEntry(modalInputValue);
+    analyzeSentiment(modalInputValue);
+    setIsInputModalOpen(false);
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -169,65 +173,85 @@ export default function JournalPage() {
     );
   }
 
-
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="space-y-2 mb-8">
-        <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Your Private Journal</h1>
-        <p className="text-muted-foreground">Reflect on your day. Your thoughts are analyzed on-device for your privacy.</p>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Today's Entry</CardTitle>
-              <CardDescription>What's on your mind? The chart will update as you type.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
-                <Textarea
-                  placeholder="Start writing here..."
-                  className="min-h-[250px] text-base resize-none"
-                  value={journalEntry}
-                  onChange={handleTextChange}
-                />
-                <Button type="submit" disabled>
-                  Analyze My Feelings (Analysis is real-time)
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+    <>
+      <div className="container mx-auto py-8 px-4 md:px-6">
+        <div className="space-y-2 mb-8">
+          <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Your Private Journal</h1>
+          <p className="text-muted-foreground">Reflect on your day. Your thoughts are analyzed on-device for your privacy.</p>
         </div>
 
-        <div className="lg:col-span-2 space-y-8">
-          {analysis && (
-             <Card>
+        <div className="grid gap-8 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <Card>
               <CardHeader>
-                <CardTitle>Real-time Sentiment Analysis</CardTitle>
+                <CardTitle>Today's Entry</CardTitle>
+                <CardDescription>Click on today's bar in the chart to log your feelings.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-lg">
-                  Current feeling is: <span className="font-bold text-primary">{analysis.sentimentLabel}</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Sentiment Score: {analysis.sentimentScore.toFixed(2)}
-                </p>
+              <CardContent>
+                  <Textarea
+                    placeholder="Your journal entry will appear here after you add it via the chart..."
+                    className="min-h-[250px] text-base resize-none"
+                    value={journalEntry}
+                    readOnly
+                  />
               </CardContent>
             </Card>
-          )}
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Wellness Rhythm</CardTitle>
-              <CardDescription>A 7-day view of your emotional journey.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <WellnessRhythmChart data={sentimentHistory} />
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-2 space-y-8">
+            {analysis && (
+               <Card>
+                <CardHeader>
+                  <CardTitle>Today's Sentiment Analysis</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="text-lg">
+                    Current feeling is: <span className="font-bold text-primary">{analysis.sentimentLabel}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Sentiment Score: {analysis.sentimentScore.toFixed(2)}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Wellness Rhythm</CardTitle>
+                <CardDescription>A 7-day view of your emotional journey. Click today's bar to add an entry.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <WellnessRhythmChart data={sentimentHistory} onChartClick={handleChartClick} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* Input Dialog */}
+      <AlertDialog open={isInputModalOpen} onOpenChange={setIsInputModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>How are you feeling today?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Write down your thoughts and feelings. The graph will update with a sentiment score.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            placeholder="What's on your mind?"
+            value={modalInputValue}
+            onChange={(e) => setModalInputValue(e.target.value)}
+            className="min-h-[150px]"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleModalSubmit}>Save & Analyze</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
+
+    
