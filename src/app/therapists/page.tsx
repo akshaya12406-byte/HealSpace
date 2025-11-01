@@ -78,8 +78,8 @@ export default function TherapistsPage() {
       }
 
       toast({
-        title: '✅ Your booking request has been sent!',
-        description: `${selectedTherapist.name} will contact you shortly to finalize details.`,
+        title: '✅ Video session link sent to your therapist!',
+        description: `Your therapist will contact you at ${user.email} to finalize details.`,
       });
 
     } catch (error: any) {
@@ -180,7 +180,7 @@ export default function TherapistsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Your Booking Request</AlertDialogTitle>
             <AlertDialogDescription>
-              This will send a booking request to {selectedTherapist?.name}. They will be notified and will contact you at <strong>{user?.email}</strong> to finalize the details.
+              This will send a booking request with a unique video call link to {selectedTherapist?.name}. They will be notified and will contact you at <strong>{user?.email}</strong> to finalize the details.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
