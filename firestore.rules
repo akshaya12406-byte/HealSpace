@@ -106,6 +106,22 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if false;
     }
+
+    /**
+     * @description Controls access to chat requests.
+     * @path /chat_requests/{requestId}
+     * @allow (create) - Any authenticated user can create a chat request.
+     * @allow (list) - Therapists can list requests where their ID matches the therapistId.
+     * @allow (update) - Therapists can update the status of requests made to them.
+     * @deny (get, delete) - Direct gets and deletes are disallowed for now.
+     */
+    match /chat_requests/{requestId} {
+      allow get: if false;
+      allow list: if isTherapist() && request.query.therapistId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isTherapist() && resource.data.therapistId == request.auth.uid;
+      allow delete: if false;
+    }
   }
 
   // Helper functions
@@ -119,5 +135,8 @@ service cloud.firestore {
 
   function isExistingOwner(userId) {
     return isOwner(userId) && resource != null;
+  }
+   function isTherapist() {
+    return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'therapist';
   }
 }

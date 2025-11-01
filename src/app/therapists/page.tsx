@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -22,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { createChatRequest } from '@/lib/firebase/chat-requests';
 
 export default function TherapistsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -31,7 +31,7 @@ export default function TherapistsPage() {
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTherapist, setSelectedTherapist] = useState<Therapist | null>(null);
-  const [isBooking, setIsBooking] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   const filteredTherapists = useMemo(() => {
     return therapists.filter(therapist => {
@@ -41,11 +41,11 @@ export default function TherapistsPage() {
     });
   }, [languageFilter, specialtyFilter]);
 
-  const handleBookClick = (therapist: Therapist) => {
+  const handleRequestClick = (therapist: Therapist) => {
     if (!user) {
         toast({
             title: 'Login Required',
-            description: 'Please log in or sign up to book a session.',
+            description: 'Please log in or sign up to request a session.',
             action: <Button size="sm" onClick={() => router.push('/login')}>Login</Button>
         });
         return;
@@ -54,51 +54,34 @@ export default function TherapistsPage() {
     setIsModalOpen(true);
   };
   
-  const handleConfirmBooking = async () => {
-    if (!selectedTherapist || !user || !user.email) {
+  const handleConfirmRequest = async () => {
+    if (!selectedTherapist || !user) {
       toast({
         variant: 'destructive',
-        title: 'Booking Failed',
-        description: 'User information is missing. Please log in again.',
+        title: 'Request Failed',
+        description: 'User or therapist information is missing. Please try again.',
       });
       return;
     }
   
-    setIsBooking(true);
+    setIsRequesting(true);
     try {
-      const response = await fetch('/api/send-booking-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userName: user.displayName || user.email,
-          userEmail: user.email,
-          therapistName: selectedTherapist.name,
-        }),
+      await createChatRequest(user.uid, selectedTherapist.id);
+      
+      toast({
+        title: '✅ Request Sent',
+        description: `Your request has been sent to ${selectedTherapist.name}. You will be notified when they respond.`,
       });
   
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to complete booking.');
-      }
-      
-      // Redirect the user to the video call
-      if (result.videoCallLink) {
-        window.location.href = result.videoCallLink;
-      } else {
-         throw new Error('Video call link not received.');
-      }
-  
     } catch (error: any) {
-      console.error('Booking failed:', error);
+      console.error('Request failed:', error);
       toast({
         variant: 'destructive',
         title: '⚠️ Something went wrong.',
-        description: error.message || 'Could not complete the booking. Please try again later.',
+        description: error.message || 'Could not send your request. Please try again later.',
       });
-      setIsBooking(false); // Only stop loading on error, as success will redirect.
+    } finally {
+      setIsRequesting(false);
       setIsModalOpen(false);
     }
   };
@@ -168,8 +151,8 @@ export default function TherapistsPage() {
                       {therapist.languages.map(l => <Badge key={l} variant="outline">{l}</Badge>)}
                     </div>
                   </div>
-                  <Button className="w-full mt-2" onClick={() => handleBookClick(therapist)}>
-                    Book Session
+                  <Button className="w-full mt-2" onClick={() => handleRequestClick(therapist)}>
+                    Request Session
                  </Button>
                 </div>
               </CardContent>
@@ -186,16 +169,16 @@ export default function TherapistsPage() {
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Booking Request</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Chat Request</AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to start a video session with {selectedTherapist?.name}. The therapist will be notified by email with a link to join you.
+              This will send a request to {selectedTherapist?.name} to start a chat session. They will be notified and can accept your request from their dashboard.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBooking}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmBooking} disabled={isBooking}>
-              {isBooking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isBooking ? 'Connecting...' : 'Start Session'}
+            <AlertDialogCancel disabled={isRequesting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRequest} disabled={isRequesting}>
+              {isRequesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isRequesting ? 'Sending...' : 'Send Request'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
