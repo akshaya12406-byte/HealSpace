@@ -55,7 +55,7 @@ export default function TherapistsPage() {
   };
   
   const handleConfirmBooking = async () => {
-    if (!selectedTherapist || !user) {
+    if (!selectedTherapist || !user || !user.email) {
       toast({
         variant: 'destructive',
         title: 'Booking Failed',
@@ -78,15 +78,18 @@ export default function TherapistsPage() {
         }),
       });
   
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorResult = await response.json();
-        throw new Error(errorResult.message || 'Failed to send booking email.');
+        throw new Error(result.message || 'Failed to complete booking.');
       }
-  
-      toast({
-        title: '✅ Booking confirmed!',
-        description: 'A video call link has been sent to your email.',
-      });
+      
+      // Redirect the user to the video call
+      if (result.videoCallLink) {
+        window.location.href = result.videoCallLink;
+      } else {
+         throw new Error('Video call link not received.');
+      }
   
     } catch (error: any) {
       console.error('Booking failed:', error);
@@ -95,8 +98,7 @@ export default function TherapistsPage() {
         title: '⚠️ Something went wrong.',
         description: error.message || 'Could not complete the booking. Please try again later.',
       });
-    } finally {
-      setIsBooking(false);
+      setIsBooking(false); // Only stop loading on error, as success will redirect.
       setIsModalOpen(false);
     }
   };
@@ -186,14 +188,14 @@ export default function TherapistsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Booking Request</AlertDialogTitle>
             <AlertDialogDescription>
-              This will confirm your session with {selectedTherapist?.name}. A confirmation email with a video call link will be sent to your registered email address.
+              You are about to start a video session with {selectedTherapist?.name}. The therapist will be notified by email with a link to join you.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBooking}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmBooking} disabled={isBooking}>
               {isBooking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isBooking ? 'Booking...' : 'Confirm'}
+              {isBooking ? 'Connecting...' : 'Start Session'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
