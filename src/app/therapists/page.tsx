@@ -55,7 +55,14 @@ export default function TherapistsPage() {
   };
   
   const handleConfirmBooking = async () => {
-    if (!selectedTherapist || !user) return;
+    if (!selectedTherapist || !user || !user.email) {
+      toast({
+        variant: 'destructive',
+        title: 'Booking Failed',
+        description: 'User information is missing. Please log in again.',
+      });
+      return;
+    }
 
     setIsBooking(true);
     try {
@@ -65,33 +72,33 @@ export default function TherapistsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // We can still send this data if we want to log it on the server
           therapistName: selectedTherapist.name,
-          userName: user.displayName || user.email || 'A HealSpace User',
+          userName: user.displayName || 'A HealSpace User',
           userEmail: user.email,
         }),
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.videoCallLink) {
-        throw new Error(result.message || 'Failed to create video session.');
+      if (!response.ok) {
+        throw new Error('Server responded with an error.');
       }
       
-      // Redirect user to the video call
-      window.location.href = result.videoCallLink;
+      toast({
+        title: '✅ Booking Confirmed!',
+        description: 'A video call link has been sent to your email.',
+        duration: 8000,
+      });
 
     } catch (error: any) {
-      console.error(error);
+      console.error('Booking failed:', error);
       toast({
         variant: 'destructive',
         title: '⚠️ Something went wrong.',
-        description: error.message || 'Could not start the video session. Please try again later.',
+        description: error.message || 'Could not send booking request. Please try again later.',
       });
+    } finally {
       setIsBooking(false);
       setIsModalOpen(false);
     }
-    // No need to set booking to false here, as the page will redirect.
   };
   
   if (authLoading) {
@@ -177,16 +184,16 @@ export default function TherapistsPage() {
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Start a Video Session?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Your Booking</AlertDialogTitle>
             <AlertDialogDescription>
-              You will be connected directly to a new video call with {selectedTherapist?.name}. Are you sure you want to proceed?
+              This will send a confirmation and a video call link to your email for your session with {selectedTherapist?.name}. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBooking}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmBooking} disabled={isBooking}>
               {isBooking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isBooking ? 'Connecting...' : 'Start Video Call'}
+              {isBooking ? 'Sending Email...' : 'Confirm & Send Email'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
