@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Loader2 } from 'lucide-react';
 import SosButton from '@/components/sos-button';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 const supportCircles = [
   {
@@ -35,6 +36,7 @@ const supportCircles = [
 
 export default function CirclesPage() {
   const { user, loading: authLoading } = useAuth();
+  const { userProfile, loading: profileLoading } = useUserProfile(user?.uid);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -53,7 +55,10 @@ export default function CirclesPage() {
     });
   };
 
-  if (authLoading) {
+  const isLoading = authLoading || (user && profileLoading);
+  const isTherapist = userProfile?.role === 'therapist';
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -100,6 +105,20 @@ export default function CirclesPage() {
             Please be aware that all public and group discussions are monitored for high-risk keywords to ensure the safety of all community members. If you express thoughts of self-harm, our SOS protocol may be proactively triggered to provide you with immediate support.
           </p>
         </div>
+
+      {isTherapist && (
+        <div className="mt-12">
+             <Card className="bg-secondary">
+                <CardHeader>
+                    <CardTitle className="font-headline text-primary">Therapist Window</CardTitle>
+                    <CardDescription>Exclusive dashboard for verified therapists</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">This section is only visible to you because you are logged in as a therapist. The floating dashboard is your main workspace.</p>
+                </CardContent>
+            </Card>
+        </div>
+      )}
     </div>
   );
 }
