@@ -66,15 +66,9 @@ export default function TherapistsPage() {
 
     setIsBooking(true);
     try {
+      // Step 1: Get the video call link from the API
       const response = await fetch('/api/send-booking-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          // We don't need to send user info anymore, but keeping the structure
-          therapistName: selectedTherapist.name,
-        }),
       });
       
       const result = await response.json();
@@ -82,16 +76,37 @@ export default function TherapistsPage() {
       if (!response.ok || !result.videoCallLink) {
         throw new Error(result.message || 'Failed to get video call link.');
       }
-      
-      // Redirect to the video call
-      window.location.href = result.videoCallLink;
+
+      // Step 2: Construct the mailto link
+      const therapistEmail = 'akshaya12406@gmail.com';
+      const userName = user?.displayName || user?.email || 'a HealSpace user';
+      const subject = `New HealSpace Therapy Request from ${userName}`;
+      const body = `
+Hi ${selectedTherapist.name},
+
+A HealSpace user (${userName}) has requested a therapy session with you.
+
+Please use the following secure video link to join the session at the scheduled time:
+${result.videoCallLink}
+
+This link is for you and the user.
+
+- The HealSpace Team
+      `;
+
+      const encodedSubject = encodeURIComponent(subject);
+      const encodedBody = encodeURIComponent(body.trim());
+      const mailtoLink = `mailto:${therapistEmail}?subject=${encodedSubject}&body=${encodedBody}`;
+
+      // Step 3: Open the user's email client
+      window.location.href = mailtoLink;
 
     } catch (error: any) {
       console.error('Booking failed:', error);
       toast({
         variant: 'destructive',
         title: '⚠️ Something went wrong.',
-        description: error.message || 'Could not initiate video call. Please try again later.',
+        description: error.message || 'Could not prepare the booking email. Please try again later.',
       });
     } finally {
       setIsBooking(false);
@@ -182,16 +197,16 @@ export default function TherapistsPage() {
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Start Video Session?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Booking Request</AlertDialogTitle>
             <AlertDialogDescription>
-              You will be connected to a secure video call with {selectedTherapist?.name} immediately. Are you ready to begin?
+              This will open your email client to send a booking request to {selectedTherapist?.name}. A unique video link will be included.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBooking}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmBooking} disabled={isBooking}>
               {isBooking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isBooking ? 'Connecting...' : 'Start Call'}
+              {isBooking ? 'Preparing...' : 'Continue'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
