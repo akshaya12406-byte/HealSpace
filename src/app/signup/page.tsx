@@ -15,7 +15,10 @@ import { signUpWithEmail, signInWithGoogle } from '@/lib/firebase/auth';
 import { HeartHandshake } from 'lucide-react';
 
 const ageGateSchema = z.object({
-  age: z.coerce.number().min(1, { message: 'Please enter your age.' }).max(120, { message: 'Please enter a valid age.' }),
+  age: z.coerce
+    .number({ invalid_type_error: 'Please enter a valid age.' })
+    .min(1, { message: 'Please enter your age.' })
+    .max(120, { message: 'Please enter a valid age.' }),
 });
 
 const accountDetailsSchema = z.object({
@@ -34,7 +37,7 @@ export default function SignupPage() {
   const ageGateForm = useForm<z.infer<typeof ageGateSchema>>({
     resolver: zodResolver(ageGateSchema),
     defaultValues: {
-      age: '' as any,
+      age: undefined,
     },
   });
 
@@ -48,25 +51,22 @@ export default function SignupPage() {
 
   function onAgeSubmit(values: z.infer<typeof ageGateSchema>) {
     setAge(values.age);
-    if (values.age < 18) {
-      // Temporarily store age and move to details, consent will be next
-      setStep('details');
-    } else {
-      setStep('details');
-    }
+    setStep('details');
   }
 
   async function onDetailsSubmit(values: z.infer<typeof accountDetailsSchema>) {
     if (age === null) {
-        toast({ title: "Error", description: "Age not set, please go back."});
-        return;
+      toast({ title: 'Error', description: 'Age not set, please go back to the previous step.' });
+      setStep('age'); // Go back to age step if age is missing
+      return;
     }
 
     setIsLoading(true);
     try {
-      await signUpWithEmail(values.email, values.password, age);
+      const userCredential = await signUpWithEmail(values.email, values.password, age);
       if (age < 18) {
-        router.push(`/signup/parental-consent?email=${encodeURIComponent(values.email)}`);
+        // Pass the new user's ID to the consent page
+        router.push(`/signup/parental-consent?uid=${userCredential.user.uid}`);
       } else {
         router.push('/journal');
       }
@@ -85,8 +85,12 @@ export default function SignupPage() {
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
-      // Google sign-in doesn't have age verification in this flow,
-      // so we direct them to a safe page. A real app would require an age gate after this.
+      // Google sign-in doesn't have our custom age gate, so we just log them in.
+      // A more robust solution would require an interstitial step to collect age.
+      toast({
+        title: 'Sign In Successful',
+        description: 'Welcome to HealSpace!',
+      });
       router.push('/journal');
     } catch (error: any) {
       toast({
@@ -100,16 +104,16 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="mx-auto w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="mx-auto w-full max-w-sm border-0 shadow-lg sm:border sm:shadow-sm">
         <CardHeader className="text-center">
           <Link href="/" className="mb-4 inline-block">
             <HeartHandshake className="h-10 w-10 mx-auto text-primary" />
           </Link>
-          <CardTitle className="text-2xl font-headline">Create Your Space</CardTitle>
+          <CardTitle className="text-2xl font-headline font-semibold">Create Your Space</CardTitle>
           <CardDescription>
             {step === 'age'
-              ? 'First, please enter your age to continue.'
+              ? 'To start, please enter your age.'
               : 'Join HealSpace to start your wellness journey.'}
           </CardDescription>
         </CardHeader>
@@ -122,7 +126,7 @@ export default function SignupPage() {
                   name="age"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Age</FormLabel>
+                      <FormLabel>Your Age</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="18" {...field} />
                       </FormControl>
@@ -130,7 +134,7 @@ export default function SignupPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full font-semibold">
                   Continue
                 </Button>
               </form>
@@ -168,9 +172,11 @@ export default function SignupPage() {
                     )}
                   />
                   <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setStep('age')} className='w-full'>Back</Button>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                    <Button variant="ghost" onClick={() => setStep('age')} className="w-1/3">
+                      Back
+                    </Button>
+                    <Button type="submit" className="w-2/3 font-semibold" disabled={isLoading}>
+                      {isLoading ? 'Creating...' : 'Create Account'}
                     </Button>
                   </div>
                 </form>
@@ -180,17 +186,17 @@ export default function SignupPage() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  <span className="bg-card px-2 text-muted-foreground">Or</span>
                 </div>
               </div>
-              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+              <Button variant="outline" className="w-full font-semibold" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
                 {isGoogleLoading ? 'Signing In...' : 'Sign up with Google'}
               </Button>
             </>
           )}
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/login" className="underline hover:text-primary">
+            <Link href="/login" className="underline hover:text-primary font-semibold">
               Log in
             </Link>
           </p>

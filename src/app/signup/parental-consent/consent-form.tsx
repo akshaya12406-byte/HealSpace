@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Mail } from 'lucide-react';
+import { requestParentalConsent } from '@/lib/firebase/auth';
 
 const formSchema = z.object({
   parentEmail: z.string().email({ message: 'Please enter a valid email for your parent or guardian.' }),
@@ -20,7 +21,7 @@ const formSchema = z.object({
 export default function ConsentForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userEmail = searchParams.get('email');
+  const userId = searchParams.get('uid');
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -32,17 +33,27 @@ export default function ConsentForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!userId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User ID is missing. Please sign up again.',
+      });
+      router.push('/signup');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // In a real app, you'd find the user by their email, get their ID, and then
-      // trigger a backend function to send the consent email.
-      // For this mock, we'll just simulate the action.
-      console.log(`Simulating parental consent request for user ${userEmail} to parent ${values.parentEmail}`);
+      // This function now just simulates sending an email and updates the user's status.
+      await requestParentalConsent(userId, values.parentEmail);
+      
       toast({
         title: 'Consent Request Sent',
         description: `An email has been sent to ${values.parentEmail} for approval.`,
       });
       router.push('/pending-approval');
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -55,15 +66,15 @@ export default function ConsentForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="mx-auto w-full max-w-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="mx-auto w-full max-w-sm border-0 shadow-lg sm:border sm:shadow-sm">
         <CardHeader className="text-center">
           <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-4">
             <Mail className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-headline">Parental Consent Required</CardTitle>
+          <CardTitle className="text-2xl font-headline font-semibold">Parental Consent Required</CardTitle>
           <CardDescription>
-            For your safety, we need approval from a parent or guardian. Please enter their email address.
+            For your safety, we need approval from a parent or guardian. Please enter their email address below so we can send them a consent request.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -74,7 +85,7 @@ export default function ConsentForm() {
                 name="parentEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent's Email</FormLabel>
+                    <FormLabel>Parent or Guardian's Email</FormLabel>
                     <FormControl>
                       <Input placeholder="parent@example.com" {...field} />
                     </FormControl>
@@ -82,7 +93,7 @@ export default function ConsentForm() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
                 {isLoading ? 'Sending Request...' : 'Send Approval Request'}
               </Button>
             </form>
