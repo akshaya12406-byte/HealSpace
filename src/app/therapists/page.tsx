@@ -79,7 +79,8 @@ export default function TherapistsPage() {
 
       toast({
         title: '✅ Video session link sent to your therapist!',
-        description: `Your therapist will contact you at ${user.email} to finalize details.`,
+        description: `Your therapist will contact you at ${user.email} to finalize details. Your link is: ${result.videoCallLink}`,
+        duration: 9000,
       });
 
     } catch (error: any) {
