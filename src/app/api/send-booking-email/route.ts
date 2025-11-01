@@ -4,6 +4,12 @@ import { randomUUID } from 'crypto';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
+  // Check for environment variables first
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    console.error('Email service is not configured. GMAIL_USER or GMAIL_PASS environment variables are missing.');
+    return NextResponse.json({ message: 'The email booking system is not configured. Please contact support.' }, { status: 500 });
+  }
+
   try {
     const { userName, userEmail, therapistName } = await request.json();
 
@@ -16,12 +22,11 @@ export async function POST(request: Request) {
     const videoCallLink = `https://meet.jit.si/HealSpace-Session-${videoCallId}`;
 
     // 2. Set up Nodemailer transporter
-    // IMPORTANT: Use environment variables for credentials in production
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.GMAIL_USER, // Your Gmail address from .env.local
-        pass: process.env.GMAIL_PASS, // Your Gmail App Password from .env.local
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
       },
     });
 
