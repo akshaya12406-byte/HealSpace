@@ -65,6 +65,7 @@ export default function TherapistsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          // We can still send this data if we want to log it on the server
           therapistName: selectedTherapist.name,
           userName: user.displayName || user.email || 'A HealSpace User',
           userEmail: user.email,
@@ -73,27 +74,24 @@ export default function TherapistsPage() {
 
       const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to send booking request.');
+      if (!response.ok || !result.videoCallLink) {
+        throw new Error(result.message || 'Failed to create video session.');
       }
-
-      toast({
-        title: '✅ Video session link sent to your therapist!',
-        description: `Your therapist will contact you at ${user.email} to finalize details. Your link is: ${result.videoCallLink}`,
-        duration: 9000,
-      });
+      
+      // Redirect user to the video call
+      window.location.href = result.videoCallLink;
 
     } catch (error: any) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: '⚠️ Something went wrong.',
-        description: error.message || 'Could not send booking request. Please try again later.',
+        description: error.message || 'Could not start the video session. Please try again later.',
       });
-    } finally {
       setIsBooking(false);
       setIsModalOpen(false);
     }
+    // No need to set booking to false here, as the page will redirect.
   };
   
   if (authLoading) {
@@ -179,16 +177,16 @@ export default function TherapistsPage() {
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Your Booking Request</AlertDialogTitle>
+            <AlertDialogTitle>Start a Video Session?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will send a booking request with a unique video call link to {selectedTherapist?.name}. They will be notified and will contact you at <strong>{user?.email}</strong> to finalize the details.
+              You will be connected directly to a new video call with {selectedTherapist?.name}. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBooking}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmBooking} disabled={isBooking}>
               {isBooking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isBooking ? 'Sending...' : 'Confirm & Send Request'}
+              {isBooking ? 'Connecting...' : 'Start Video Call'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
