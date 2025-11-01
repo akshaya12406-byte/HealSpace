@@ -38,20 +38,22 @@ export default function CirclesPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
   const handleJoinCircle = (circleTitle: string) => {
+    if (!user) {
+        toast({
+            title: 'Login Required',
+            description: 'Please log in or sign up to join a circle.',
+            action: <Button size="sm" onClick={() => router.push('/login')}>Login</Button>
+        });
+        return;
+    }
     toast({
       title: 'Request to Join Sent',
       description: `Your request to join the "${circleTitle}" circle is pending approval. You'll be notified soon.`,
     });
   };
 
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />

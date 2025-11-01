@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,12 +20,6 @@ export default function TherapistsPage() {
   const [languageFilter, setLanguageFilter] = useState('all');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
   const filteredTherapists = useMemo(() => {
     return therapists.filter(therapist => {
       const languageMatch = languageFilter === 'all' || therapist.languages.includes(languageFilter);
@@ -34,13 +29,21 @@ export default function TherapistsPage() {
   }, [languageFilter, specialtyFilter]);
 
   const handleBookSession = (therapistName: string) => {
+    if (!user) {
+        toast({
+            title: 'Login Required',
+            description: 'Please log in or sign up to book a session.',
+            action: <Button size="sm" onClick={() => router.push('/login')}>Login</Button>
+        });
+        return;
+    }
     toast({
       title: 'Booking Request Sent!',
       description: `Your request for a session with ${therapistName} has been received. You will get a confirmation email shortly.`,
     });
   };
   
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
